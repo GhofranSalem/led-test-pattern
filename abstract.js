@@ -26,12 +26,14 @@
     palette: PALETTES[0].colors.slice(),
     seed: 20261119,
     density: 0.5,
+    scale: 0.5,
+    glow: 0.5,
     grain: true,
     speed: 1,
     secs: 30,
     fps: 30,
-    logo: { size: 0.25, anchor: 'br', margin: 0.05, cx: 0.5, cy: 0.5, opacity: 1, anim: 'none', blur: 0, dim: 0 },
-    text: { title: '', sub: '', font: 'Cairo', weight: 700, color: '#ffffff', size: 0.12, anchor: 'c', margin: 0.05, cx: 0.5, cy: 0.5, shadow: true, anim: 'none', blur: 0, dim: 0 },
+    logo: { size: 0.25, anchor: 'br', margin: 0.05, cx: 0.5, cy: 0.5, opacity: 1, anim: 'none', bd: { ...Backdrop.DEFAULTS } },
+    text: { title: '', sub: '', font: 'Cairo', weight: 700, color: '#ffffff', size: 0.12, anchor: 'c', margin: 0.05, cx: 0.5, cy: 0.5, shadow: true, anim: 'none', bd: { ...Backdrop.DEFAULTS } },
   };
   let logo = null; // loaded logo image (see logo.js)
 
@@ -42,7 +44,7 @@
   }
 
   function params() {
-    return { style: state.style, palette: state.palette, seed: state.seed, density: state.density, grain: state.grain, speed: state.speed };
+    return { style: state.style, palette: state.palette, seed: state.seed, density: state.density, scale: state.scale, glow: state.glow, grain: state.grain, speed: state.speed };
   }
 
   // background + logo: used by the preview, the PNG and every video frame
@@ -53,7 +55,7 @@
       const r = Logo.rect(logo, state.logo, W, H);
       const st = Anim.at(animated ? state.logo.anim : 'none', t, state.secs, 0);
       Anim.apply(c, st, r.x + r.w / 2, r.y + r.h / 2, H, () => {
-        Backdrop.draw(c, r, state.logo, W, H);
+        Backdrop.draw(c, r, state.logo.bd, W, H);
         Logo.draw(c, logo, state.logo, W, H);
       });
     }
@@ -62,7 +64,7 @@
       // the name follows the logo by a beat when both move
       const st = Anim.at(animated ? state.text.anim : 'none', t, state.secs, logo && state.logo.anim !== 'none' ? 0.3 : 0);
       Anim.apply(c, st, L.x + L.w / 2, L.y + L.h / 2, H, () => {
-        Backdrop.draw(c, L, state.text, W, H);
+        Backdrop.draw(c, L, state.text.bd, W, H);
         EventText.draw(c, state.text, W, H);
       });
     }
@@ -76,7 +78,7 @@
   }
 
   // ---------------------------------------------------------------- URL
-  const NUM = ['w', 'h', 'cabCols', 'cabRows', 'cabW', 'cabH', 'cabKg', 'cabWatt', 'seed', 'density', 'speed', 'secs', 'fps'];
+  const NUM = ['w', 'h', 'cabCols', 'cabRows', 'cabW', 'cabH', 'cabKg', 'cabWatt', 'seed', 'density', 'scale', 'glow', 'speed', 'secs', 'fps'];
   const BOOL = ['cabOn', 'grain'];
 
   function toHash() {
@@ -87,11 +89,11 @@
     p.set('style', state.style);
     p.set('pal', state.palette.map(c => c.slice(1)).join('-'));
     const L = state.logo;
-    p.set('logo', [L.size, L.anchor, L.margin, +L.cx.toFixed(4), +L.cy.toFixed(4), L.opacity, L.anim, L.blur, L.dim].join('~'));
+    p.set('logo', [L.size, L.anchor, L.margin, +L.cx.toFixed(4), +L.cy.toFixed(4), L.opacity, L.anim, ...Backdrop.serialize(L.bd)].join('~'));
     const T = state.text;
     if (T.title) p.set('title', T.title);
     if (T.sub) p.set('sub', T.sub);
-    p.set('txt', [T.font, T.weight, T.color.slice(1), T.size, T.anchor, T.margin, +T.cx.toFixed(4), +T.cy.toFixed(4), T.shadow ? 1 : 0, T.anim, T.blur, T.dim].join('~'));
+    p.set('txt', [T.font, T.weight, T.color.slice(1), T.size, T.anchor, T.margin, +T.cx.toFixed(4), +T.cy.toFixed(4), T.shadow ? 1 : 0, T.anim, ...Backdrop.serialize(T.bd)].join('~'));
     return p.toString();
   }
 
@@ -108,7 +110,7 @@
       if (cols.length === 5) state.palette = cols;
     }
     if (p.has('logo')) {
-      const [size, anchor, margin, cx, cy, opacity, anim, blur, dim] = p.get('logo').split('~');
+      const [size, anchor, margin, cx, cy, opacity, anim, ...bd] = p.get('logo').split('~');
       const L = state.logo, n = (v, lo, hi, d) => (isFinite(+v) ? Math.min(hi, Math.max(lo, +v)) : d);
       L.size = n(size, 0.03, 1, L.size);
       if (/^(tl|t|tr|l|c|r|bl|b|br|custom)$/.test(anchor)) L.anchor = anchor;
@@ -116,13 +118,13 @@
       L.cx = n(cx, 0, 1, L.cx); L.cy = n(cy, 0, 1, L.cy);
       L.opacity = n(opacity, 0.1, 1, L.opacity);
       if (Anim.TYPES.some(a => a.id === anim)) L.anim = anim;
-      L.blur = n(blur, 0, 1, 0); L.dim = n(dim, 0, 1, 0);
+      L.bd = Backdrop.parse(bd);
     }
     const T = state.text;
     if (p.has('title')) T.title = p.get('title').slice(0, 200);
     if (p.has('sub')) T.sub = p.get('sub').slice(0, 200);
     if (p.has('txt')) {
-      const [font, weight, color, sz, anchor, margin, cx, cy, shadow, anim, blur, dim] = p.get('txt').split('~');
+      const [font, weight, color, sz, anchor, margin, cx, cy, shadow, anim, ...bd] = p.get('txt').split('~');
       const n = (v, lo, hi, d) => (isFinite(+v) && v !== '' ? Math.min(hi, Math.max(lo, +v)) : d);
       if (EventText.FONTS.some(f => f.id === font)) T.font = font;
       if (['400', '700', '900'].includes(weight)) T.weight = Number(weight);
@@ -133,13 +135,13 @@
       T.cx = n(cx, 0, 1, T.cx); T.cy = n(cy, 0, 1, T.cy);
       T.shadow = shadow !== '0';
       if (Anim.TYPES.some(a => a.id === anim)) T.anim = anim;
-      T.blur = n(blur, 0, 1, 0); T.dim = n(dim, 0, 1, 0);
+      T.bd = Backdrop.parse(bd);
     }
   }
 
   // ---------------------------------------------------------------- form <-> state
   function stateToForm() {
-    ['w', 'h', 'cabCols', 'cabRows', 'cabW', 'cabH', 'density', 'speed'].forEach(k => { $(k).value = state[k]; });
+    ['w', 'h', 'cabCols', 'cabRows', 'cabW', 'cabH', 'density', 'scale', 'glow', 'speed'].forEach(k => { $(k).value = state[k]; });
     $('cabKg').value = state.cabKg || '';
     $('cabWatt').value = state.cabWatt || '';
     $('panel').value = state.panel;
@@ -151,8 +153,7 @@
     $('logoSize').value = state.logo.size;
     $('logoMargin').value = state.logo.margin;
     $('logoOpacity').value = state.logo.opacity;
-    $('logoBlur').value = state.logo.blur; $('logoDim').value = state.logo.dim;
-    $('textBlur').value = state.text.blur; $('textDim').value = state.text.dim;
+    bdToForm();
     const T = state.text;
     $('textTitle').value = T.title;
     $('textSub').value = T.sub;
@@ -169,6 +170,8 @@
   function formToState() {
     ['w', 'h', 'cabCols', 'cabRows', 'cabW', 'cabH', 'secs', 'fps', 'speed'].forEach(k => { state[k] = Math.floor(Number($(k).value)) || 0; });
     state.density = Number($('density').value);
+    state.scale = Number($('scale').value);
+    state.glow = Number($('glow').value);
     state.cabKg = Math.max(0, parseFloat($('cabKg').value) || 0);
     state.cabWatt = Math.max(0, parseFloat($('cabWatt').value) || 0);
     state.panel = $('panel').value;
@@ -337,6 +340,7 @@
     const isStatic = kindOf(state.style) === 'static';
     document.querySelector(`input[name="kind"][value="${isStatic ? 'static' : 'animated'}"]`).checked = true;
     $('speed').disabled = isStatic;
+    $('staticOpts').hidden = !isStatic;
     $('kindNote').textContent = isStatic ? I18n.t('ab.staticNote') : '';
     $('kindNote').hidden = !isStatic;
     updateTextUI();
@@ -457,8 +461,25 @@
   $('logoSize').addEventListener('input', e => { state.logo.size = Number(e.target.value); changed(); });
   $('logoMargin').addEventListener('input', e => { state.logo.margin = Number(e.target.value); changed(); });
   $('logoOpacity').addEventListener('input', e => { state.logo.opacity = Number(e.target.value); changed(); });
-  $('logoBlur').addEventListener('input', e => { state.logo.blur = Number(e.target.value); changed(); });
-  $('logoDim').addEventListener('input', e => { state.logo.dim = Number(e.target.value); changed(); });
+  // glass panel controls: logoBd / logoBlur / logoDim / logoShine / logoFade / logoFadeSize, same for text
+  const BD_FIELDS = { Bd: 'mode', Blur: 'blur', Dim: 'dim', Shine: 'shine', Fade: 'fade', FadeSize: 'fadeSize' };
+  function bdToForm() {
+    [['logo', state.logo.bd], ['text', state.text.bd]].forEach(([k, o]) => {
+      Object.entries(BD_FIELDS).forEach(([id, f]) => { $(k + id).value = o[f]; });
+      $(k + 'BdOpts').hidden = o.mode === 'off';
+      $(k + 'FadeSize').disabled = o.fade === 'none';
+    });
+  }
+  [['logo', () => state.logo.bd], ['text', () => state.text.bd]].forEach(([k, get]) => {
+    Object.entries(BD_FIELDS).forEach(([id, f]) => {
+      $(k + id).addEventListener('input', e => {
+        const v = e.target.value;
+        get()[f] = f === 'mode' || f === 'fade' ? v : Number(v);
+        bdToForm();
+        changed();
+      });
+    });
+  });
   $('logoPos').addEventListener('click', e => {
     const b = e.target.closest('button[data-a]');
     if (!b) return;
@@ -554,8 +575,6 @@
   $('textSize').addEventListener('input', e => { state.text.size = Number(e.target.value); changed(); });
   $('textMargin').addEventListener('input', e => { state.text.margin = Number(e.target.value); changed(); });
   $('textShadow').addEventListener('input', e => { state.text.shadow = e.target.checked; changed(); });
-  $('textBlur').addEventListener('input', e => { state.text.blur = Number(e.target.value); changed(); });
-  $('textDim').addEventListener('input', e => { state.text.dim = Number(e.target.value); changed(); });
   $('textAnim').addEventListener('input', e => { state.text.anim = e.target.value; changed(); });
   $('logoAnim').addEventListener('input', e => { state.logo.anim = e.target.value; changed(); });
   $('textPos').addEventListener('click', e => {

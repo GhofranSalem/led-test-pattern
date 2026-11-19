@@ -10,7 +10,7 @@ The owner writes in Egyptian Arabic; reply in Arabic. They operate LED walls at 
 |---|---|
 | `index.html`, `home.js` | Home page with tool picker; live previews on the cards. Old `index.html#w=…` links redirect to `abstract.html`. |
 | `abstract.html`, `abstract.js` | Backgrounds tool: resolution, style (Animated / Static), palette, logo, event name, motion, PNG / MP4 export, screensaver section. |
-| `generators.js` | All background styles (`STYLES`, each `{id, name, draw, kind}`), `PALETTES`, `render()`, grain. |
+| `generators.js` | All background styles (`STYLES`, each `{id, name, draw, kind}`), `PALETTES`, `render()`, grain. Static styles use `prepS(p)`: seeded palette shuffle, `sc` from `p.scale` (size) and `k` from `p.glow` (light); 0.5 is the default look. |
 | `logo.js` | Logo load (SVG/PNG), layout rect, draw, upscale warning; stored in localStorage. |
 | `text.js` | Event-name text overlay (fonts: Cairo, Tajawal, Almarai, Montserrat). |
 | `anim.js` | Logo/text motion in videos (fade, slide, zoom, float, pulse). |

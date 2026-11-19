@@ -209,6 +209,8 @@
     'ab.shape': ['Shape', 'الشكل'],
     'ab.reseed': ['🎲 New layout', '🎲 شكل جديد'],
     'ab.density': ['Density', 'الكثافة'],
+    'ab.scale': ['Size of shapes', 'حجم الأشكال'],
+    'ab.glow': ['Light', 'الإضاءة'],
     'ab.grain': ['Light grain (reduces banding on the screen)', 'Grain خفيف (بيقلل الـ banding على الشاشة)'],
     'ab.logo': ['Company logo', 'لوجو الشركة'],
     'ab.logoPick': ['Choose an SVG or PNG file, or drop it here', 'اختار ملف SVG أو PNG، أو اسحبه هنا'],

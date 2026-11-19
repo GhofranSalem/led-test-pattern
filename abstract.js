@@ -26,6 +26,8 @@
     palette: PALETTES[0].colors.slice(),
     seed: 20261119,
     density: 0.5,
+    scale: 0.5,
+    glow: 0.5,
     grain: true,
     speed: 1,
     secs: 30,
@@ -42,7 +44,7 @@
   }
 
   function params() {
-    return { style: state.style, palette: state.palette, seed: state.seed, density: state.density, grain: state.grain, speed: state.speed };
+    return { style: state.style, palette: state.palette, seed: state.seed, density: state.density, scale: state.scale, glow: state.glow, grain: state.grain, speed: state.speed };
   }
 
   // background + logo: used by the preview, the PNG and every video frame
@@ -76,7 +78,7 @@
   }
 
   // ---------------------------------------------------------------- URL
-  const NUM = ['w', 'h', 'cabCols', 'cabRows', 'cabW', 'cabH', 'cabKg', 'cabWatt', 'seed', 'density', 'speed', 'secs', 'fps'];
+  const NUM = ['w', 'h', 'cabCols', 'cabRows', 'cabW', 'cabH', 'cabKg', 'cabWatt', 'seed', 'density', 'scale', 'glow', 'speed', 'secs', 'fps'];
   const BOOL = ['cabOn', 'grain'];
 
   function toHash() {
@@ -139,7 +141,7 @@
 
   // ---------------------------------------------------------------- form <-> state
   function stateToForm() {
-    ['w', 'h', 'cabCols', 'cabRows', 'cabW', 'cabH', 'density', 'speed'].forEach(k => { $(k).value = state[k]; });
+    ['w', 'h', 'cabCols', 'cabRows', 'cabW', 'cabH', 'density', 'scale', 'glow', 'speed'].forEach(k => { $(k).value = state[k]; });
     $('cabKg').value = state.cabKg || '';
     $('cabWatt').value = state.cabWatt || '';
     $('panel').value = state.panel;
@@ -168,6 +170,8 @@
   function formToState() {
     ['w', 'h', 'cabCols', 'cabRows', 'cabW', 'cabH', 'secs', 'fps', 'speed'].forEach(k => { state[k] = Math.floor(Number($(k).value)) || 0; });
     state.density = Number($('density').value);
+    state.scale = Number($('scale').value);
+    state.glow = Number($('glow').value);
     state.cabKg = Math.max(0, parseFloat($('cabKg').value) || 0);
     state.cabWatt = Math.max(0, parseFloat($('cabWatt').value) || 0);
     state.panel = $('panel').value;
@@ -336,6 +340,7 @@
     const isStatic = kindOf(state.style) === 'static';
     document.querySelector(`input[name="kind"][value="${isStatic ? 'static' : 'animated'}"]`).checked = true;
     $('speed').disabled = isStatic;
+    $('staticOpts').hidden = !isStatic;
     $('kindNote').textContent = isStatic ? I18n.t('ab.staticNote') : '';
     $('kindNote').hidden = !isStatic;
     updateTextUI();

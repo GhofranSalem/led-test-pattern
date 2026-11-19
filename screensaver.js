@@ -13,7 +13,7 @@
 
   // ---------------------------------------------------------------- settings
   const S = {
-    style: 'blobs', palette: PALETTES[0].colors.slice(), seed: 20261119, density: 0.5, grain: true, speed: 1, secs: 30,
+    style: 'blobs', palette: PALETTES[0].colors.slice(), seed: 20261119, density: 0.5, scale: 0.5, glow: 0.5, grain: true, speed: 1, secs: 30,
     logo: { size: 0.25, anchor: 'br', margin: 0.05, cx: 0.5, cy: 0.5, opacity: 1, anim: 'none', bd: { ...Backdrop.DEFAULTS } },
     text: { title: '', sub: '', font: 'Cairo', weight: 700, color: '#ffffff', size: 0.12, anchor: 'c', margin: 0.05, cx: 0.5, cy: 0.5, shadow: true, anim: 'none', bd: { ...Backdrop.DEFAULTS } },
   };
@@ -21,7 +21,7 @@
   (function parse() {
     const p = new URLSearchParams(location.hash.slice(1));
     const num = (k, lo, hi) => { if (p.has(k) && isFinite(+p.get(k))) S[k] = Math.min(hi, Math.max(lo, +p.get(k))); };
-    num('seed', 0, 2 ** 31); num('density', 0, 1); num('speed', 1, 4); num('secs', 1, 600);
+    num('seed', 0, 2 ** 31); num('density', 0, 1); num('scale', 0, 1); num('glow', 0, 1); num('speed', 1, 4); num('secs', 1, 600);
     if (p.has('grain')) S.grain = p.get('grain') === '1';
     if (p.has('style') && STYLES.some(s => s.id === p.get('style'))) S.style = p.get('style');
     if (p.has('pal')) {
@@ -59,7 +59,7 @@
     }
   })();
 
-  const params = { style: S.style, palette: S.palette, seed: S.seed, density: S.density, grain: S.grain, speed: S.speed };
+  const params = { style: S.style, palette: S.palette, seed: S.seed, density: S.density, scale: S.scale, glow: S.glow, grain: S.grain, speed: S.speed };
   const isStatic = (STYLES.find(s => s.id === S.style) || STYLES[0]).kind === 'static';
 
   // The logo lives in this browser's storage only (screensaver apps have their own).

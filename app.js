@@ -41,6 +41,7 @@
     ['p10o', 'panel.gOutdoor', 'P10', 10, 960, 960, 96, 96],
   ];
   const panelById = id => PANELS.find(p => p[0] === id);
+  const DEFAULT_PANEL = 'p2.6'; // matches the 192 px cabinet fields in the HTML
 
   const $ = id => document.getElementById(id);
   const canvas = $('canvas');
@@ -63,7 +64,6 @@
     }
     const pn = panelById(s.panel);
     if (pn && s.cabOn) {
-      s.cabMmW = pn[4]; s.cabMmH = pn[5];
       s.mmW = s.cabCols * pn[4];
       s.mmH = s.cabRows * pn[5];
       s.panelInfo = `${pn[2]} · ${pn[4]}×${pn[5]} mm  ·  ${(s.mmW / 1000).toFixed(2)} × ${(s.mmH / 1000).toFixed(2)} m`;
@@ -133,6 +133,12 @@
     sel.value = keep;
   }
 
+  // A link or preset can name no panel, or one whose pixels were changed: keep its own cabinet pixels.
+  function syncPanel() {
+    const pn = panelById($('panel').value);
+    if (pn && (Number($('cabW').value) !== pn[6] || Number($('cabH').value) !== pn[7])) $('panel').value = '';
+  }
+
   // Typing the screen size in meters picks the nearest whole number of cabinets.
   function fromMeters(id) {
     const pn = panelById($('panel').value);
@@ -149,8 +155,12 @@
     const pn = panelById(e.target.value);
     if (pn) {
       applyState({ cabOn: true, cabW: pn[6], cabH: pn[7] });
-      // keep the screen size the user typed, recount the cabinets for the new panel
-      fromMeters('scrW'); fromMeters('scrH');
+      // keep the screen size in meters, recount the cabinets for the new panel
+      ['scrW', 'scrH'].forEach(id => {
+        const m = parseFloat($(id).value);
+        if (m > 0 && !(asked[id] > 0)) asked[id] = m;
+        fromMeters(id);
+      });
     }
     $('preset').value = '';
     $('deletePreset').hidden = true;
@@ -186,6 +196,7 @@
       const p = loadSaved()[Number(v.slice(2))];
       if (p) applyState(p.state || { w: p.w, h: p.h, cabOn: false, panel: '' });
     }
+    syncPanel();
     update();
   });
 
@@ -194,7 +205,9 @@
     const name = $('presetName').value.trim() || s.screen || `${s.w}×${s.h}`;
     $('presetName').value = '';
     const list = loadSaved();
-    list.push({ name, w: s.w, h: s.h, state: s });
+    const keep = {};
+    [...numKeys, ...boolKeys, ...textKeys, 'bg'].forEach(k => { keep[k] = s[k]; });
+    list.push({ name, w: s.w, h: s.h, state: keep });
     if (!storeSaved(list)) { status(I18n.t('tp.storeFail'), true); return; }
     fillPresets();
     $('preset').value = `s:${list.length - 1}`;
@@ -214,7 +227,6 @@
 
   // ---------- render ----------
   let timer = null;
-  let current = null;
 
   function status(msg, isErr) {
     const el = $('status');
@@ -239,12 +251,12 @@
     $('meta').textContent = s.w > 0 && s.h > 0
       ? `${TestPattern.aspect(s.w, s.h)}  ·  ${(s.w * s.h / 1e6).toFixed(2)} MP`
       : '';
-    renderSummary(s);
+    renderSummary(s, v.error);
 
     try { history.replaceState(null, '', '#' + toQuery(s)); } catch { /* file:// in some browsers */ }
     // carry the resolution over to the other page
     $('otherTab').href = 'abstract.html#' + new URLSearchParams(s.cabOn
-      ? { cabOn: 1, cabCols: s.cabCols, cabRows: s.cabRows, cabW: s.cabW, cabH: s.cabH }
+      ? { cabOn: 1, cabCols: s.cabCols, cabRows: s.cabRows, cabW: s.cabW, cabH: s.cabH, panel: s.panel }
       : { w: s.w, h: s.h, cabOn: 0 }).toString();
 
     if (v.error) return;
@@ -252,7 +264,7 @@
     timer = setTimeout(() => render(s), s.w * s.h > 8e6 ? 250 : 60);
   }
 
-  function renderSummary(s) {
+  function renderSummary(s, error) {
     const box = $('summary');
     const hasPanel = !!s.mmW;
     $('scrW').disabled = $('scrH').disabled = !hasPanel;
@@ -266,7 +278,7 @@
     if (hasPanel && !typing) { $('scrW').value = fmtM(s.mmW); $('scrH').value = fmtM(s.mmH); }
 
     const items = [
-      [I18n.t('sum.cabinets'), I18n.t('sum.cabVal', { n: s.cabCols * s.cabRows, c: s.cabCols, r: s.cabRows })],
+      [I18n.t('sum.cabinets'), `${s.cabCols * s.cabRows} (${s.cabCols} × ${s.cabRows})`],
       [I18n.t('sum.pixels'), `${s.w} × ${s.h} px`],
     ];
     if (hasPanel) {
@@ -280,6 +292,13 @@
       const b = document.createElement('b'); b.textContent = v;
       d.append(a, b); box.appendChild(d);
     });
+    if (error) {
+      // the main warning sits at the top of the panel; repeat it where the size was typed
+      const p = document.createElement('p');
+      p.className = 'physical err';
+      p.textContent = error;
+      box.appendChild(p);
+    }
     if (hasPanel) {
       const notes = [];
       if ((asked.scrW > 0 && Math.abs(asked.scrW * 1000 - s.mmW) > 1) || (asked.scrH > 0 && Math.abs(asked.scrH * 1000 - s.mmH) > 1)) {
@@ -298,7 +317,6 @@
     if (canvas.width !== s.w) canvas.width = s.w;
     if (canvas.height !== s.h) canvas.height = s.h;
     TestPattern.draw(ctx, s.w, s.h, s);
-    current = s;
   }
 
   // ---------- export ----------
@@ -380,10 +398,8 @@
   });
   fillPresets();
   fillPanels();
-  $('panel').value = 'p2.6'; // default: P2.6 500×500 cabinets (matches the default 192 px fields)
+  $('panel').value = DEFAULT_PANEL;
   if (location.hash.length > 1) applyState(fromQuery(location.hash.slice(1)));
-  // a link or preset without a matching panel keeps its own cabinet pixels
-  const pn = panelById($('panel').value);
-  if (pn && (Number($('cabW').value) !== pn[6] || Number($('cabH').value) !== pn[7])) $('panel').value = '';
+  syncPanel();
   update();
 })();

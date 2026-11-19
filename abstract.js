@@ -21,7 +21,7 @@
   // ---------------------------------------------------------------- state
   const state = {
     w: 1920, h: 1080,
-    cabOn: false, cabCols: 12, cabRows: 4, cabW: 128, cabH: 128,
+    cabOn: false, cabCols: 12, cabRows: 4, cabW: 128, cabH: 128, panel: '',
     style: 'blobs',
     palette: PALETTES[0].colors.slice(),
     seed: 20261119,
@@ -77,6 +77,7 @@
     const p = new URLSearchParams();
     NUM.forEach(k => p.set(k, state[k]));
     BOOL.forEach(k => p.set(k, state[k] ? '1' : '0'));
+    if (state.panel) p.set('panel', state.panel); // test-pattern cabinet type, carried between the pages
     p.set('style', state.style);
     p.set('pal', state.palette.map(c => c.slice(1)).join('-'));
     const L = state.logo;
@@ -92,6 +93,7 @@
     const p = new URLSearchParams(h);
     NUM.forEach(k => { if (p.has(k) && isFinite(Number(p.get(k)))) state[k] = Number(p.get(k)); });
     BOOL.forEach(k => { if (p.has(k)) state[k] = p.get(k) === '1'; });
+    if (p.has('panel') && /^[a-z0-9.]{1,12}$/.test(p.get('panel'))) state.panel = p.get('panel');
     if (p.has('style') && STYLES.some(s => s.id === p.get('style'))) state.style = p.get('style');
     if (p.has('pal')) {
       const cols = p.get('pal').split('-').filter(c => /^[0-9a-f]{6}$/i.test(c)).map(c => '#' + c.toLowerCase());
@@ -324,7 +326,7 @@
     try { history.replaceState(null, '', '#' + toHash()); } catch { /* ignore */ }
     $('ssOpen').href = 'screensaver.html#' + toHash();
     $('otherTab').href = 'test-pattern.html#' + new URLSearchParams(state.cabOn
-      ? { cabOn: 1, cabCols: state.cabCols, cabRows: state.cabRows, cabW: state.cabW, cabH: state.cabH }
+      ? { cabOn: 1, cabCols: state.cabCols, cabRows: state.cabRows, cabW: state.cabW, cabH: state.cabH, panel: state.panel || '' }
       : { w: state.w, h: state.h, cabOn: 0 }).toString();
 
     if (!err) { sizePreview(); drawPreview(); }

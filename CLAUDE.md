@@ -16,7 +16,7 @@ The owner writes in Egyptian Arabic; reply in Arabic. They operate LED walls at 
 | `anim.js` | Logo/text motion in videos (fade, slide, zoom, float, pulse). |
 | `video.js` | MP4 (H.264) export via WebCodecs + `vendor/mp4-muxer.js` 5.2.1 (MIT). Chrome/Edge only. |
 | `screensaver.html`, `screensaver.js` | Full-screen live player driven by the same URL hash; used with Lively Wallpaper (Windows) or WebViewScreenSaver (macOS). |
-| `test-pattern.html`, `app.js`, `pattern.js` | Test-pattern tool (cabinets with LED panel presets by pixel pitch, grid, bars, full fields). |
+| `test-pattern.html`, `app.js`, `pattern.js` | Test-pattern tool: cabinets (on by default) with cabinet-type presets by pixel pitch and screen size in meters → cabinet count, pixels, area; grid, bars, full fields. The `panel` hash key is passed through `abstract.js` so it survives switching pages. |
 | `i18n.js` | All UI strings, English (default) and Arabic. |
 | `save.js` | File download (plain link, or the claude.ai artifact `downloads` capability). |
 | `style.css` | Shared dark "console" theme. |

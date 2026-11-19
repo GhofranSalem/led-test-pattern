@@ -30,7 +30,9 @@
     speed: 1,
     secs: 30,
     fps: 30,
+    logo: { size: 0.25, anchor: 'br', margin: 0.05, cx: 0.5, cy: 0.5, opacity: 1 },
   };
+  let logo = null; // loaded logo image (see logo.js)
 
   function size() {
     return state.cabOn
@@ -40,6 +42,12 @@
 
   function params() {
     return { style: state.style, palette: state.palette, seed: state.seed, density: state.density, grain: state.grain, speed: state.speed };
+  }
+
+  // background + logo: used by the preview, the PNG and every video frame
+  function renderFrame(c, W, H, t, p) {
+    render(c, W, H, t, p);
+    Logo.draw(c, logo, state.logo, W, H);
   }
 
   function validate(W, H) {
@@ -59,6 +67,8 @@
     BOOL.forEach(k => p.set(k, state[k] ? '1' : '0'));
     p.set('style', state.style);
     p.set('pal', state.palette.map(c => c.slice(1)).join('-'));
+    const L = state.logo;
+    p.set('logo', [L.size, L.anchor, L.margin, +L.cx.toFixed(4), +L.cy.toFixed(4), L.opacity].join('~'));
     return p.toString();
   }
 
@@ -71,6 +81,15 @@
       const cols = p.get('pal').split('-').filter(c => /^[0-9a-f]{6}$/i.test(c)).map(c => '#' + c.toLowerCase());
       if (cols.length === 5) state.palette = cols;
     }
+    if (p.has('logo')) {
+      const [size, anchor, margin, cx, cy, opacity] = p.get('logo').split('~');
+      const L = state.logo, n = (v, lo, hi, d) => (isFinite(+v) ? Math.min(hi, Math.max(lo, +v)) : d);
+      L.size = n(size, 0.03, 1, L.size);
+      if (/^(tl|t|tr|l|c|r|bl|b|br|custom)$/.test(anchor)) L.anchor = anchor;
+      L.margin = n(margin, 0, 0.25, L.margin);
+      L.cx = n(cx, 0, 1, L.cx); L.cy = n(cy, 0, 1, L.cy);
+      L.opacity = n(opacity, 0.1, 1, L.opacity);
+    }
   }
 
   // ---------------------------------------------------------------- form <-> state
@@ -81,6 +100,9 @@
     $('secs').value = String(state.secs);
     $('fps').value = String(state.fps);
     document.querySelectorAll('#colors input').forEach(inp => { inp.value = state.palette[Number(inp.dataset.i)]; });
+    $('logoSize').value = state.logo.size;
+    $('logoMargin').value = state.logo.margin;
+    $('logoOpacity').value = state.logo.opacity;
   }
 
   function formToState() {
@@ -192,7 +214,7 @@
 
   function drawPreview() {
     if (!previewW) return;
-    render(ctx, previewW, previewH, currentT(), params());
+    renderFrame(ctx, previewW, previewH, currentT(), params());
   }
 
   function loop() {
@@ -234,6 +256,7 @@
     if (VideoExport.supported() && (VW !== W || VH !== H)) info += ` — اتزوّد بكسل أسود لأن H.264 محتاج أرقام زوجية.`;
     $('videoInfo').textContent = err ? '' : info;
 
+    updateLogoUI(W, H, err);
     markPalette();
     drawThumbs();
     try { history.replaceState(null, '', '#' + toHash()); } catch { /* ignore */ }
@@ -248,6 +271,7 @@
 
   $('controls').addEventListener('input', e => {
     const id = e.target.id;
+    if (id.startsWith('logo')) return; // handled by the logo section
     if (e.target.closest('#colors')) {
       state.palette[Number(e.target.dataset.i)] = e.target.value;
     } else if (id === 'preset') {
@@ -268,6 +292,137 @@
   });
 
   window.addEventListener('resize', () => { sizePreview(); drawPreview(); });
+
+  // ---------------------------------------------------------------- logo
+  const fmt = n => Math.round(n).toLocaleString('en-US');
+  // "1,800 × 540 px" kept left-to-right inside Arabic sentences
+  const dim = (w, h) => `\u2066${fmt(w)} × ${fmt(h)} px\u2069`;
+
+  function updateLogoUI(W, H, err) {
+    const has = !!logo;
+    $('logoControls').hidden = !has;
+    $('logoDropText').textContent = has ? 'تغيير اللوجو (SVG أو PNG)' : 'اختار ملف SVG أو PNG، أو اسحبه هنا';
+    canvas.classList.toggle('has-logo', has);
+    $('logoSizeOut').textContent = Math.round(state.logo.size * 100) + '%';
+    document.querySelectorAll('#logoPos button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.a === state.logo.anchor)));
+    $('logoMargin').disabled = state.logo.anchor === 'custom' || state.logo.anchor === 'c';
+
+    let warn = '', short = '', severe = false;
+    if (has && !err) {
+      const r = Logo.rect(logo, state.logo, W, H);
+      $('logoPx').textContent = `هيتعرض بمقاس ${dim(r.w, r.h)}` +
+        (logo.kind === 'svg' ? ' · SVG (بيفضل حاد في أي مقاس)' : ` · الأصل ${dim(logo.natW, logo.natH)}`);
+      const up = Logo.upscale(logo, state.logo, W, H);
+      if (up > 1.05) {
+        severe = up >= 2;
+        warn = `⚠ اللوجو صغير على الرزلوشن ده: الأصل ${dim(logo.natW, logo.natH)} وهيتكبّر \u2066${up.toFixed(1)}×\u2069 لـ ${dim(r.w, r.h)}، فهيبان مش حاد على الشاشة. ` +
+          `محتاج نسخة ارتفاعها \u2066${fmt(Math.ceil(r.h))} px\u2069 على الأقل، أو ملف SVG، أو صغّر الحجم.`;
+        short = `⚠ اللوجو هيتكبّر \u2066${up.toFixed(1)}×\u2069 ومش هيبقى حاد.`;
+      } else if (logo.kind === 'svg' && logo.hasRaster) {
+        warn = 'ملحوظة: ملف الـ SVG ده جواه صورة عادية (مش vector)، فالجزء ده ممكن مايبقاش حاد لو اتكبّر.';
+      }
+    }
+    $('logoWarn').hidden = !warn;
+    $('logoWarn').textContent = warn;
+    $('logoWarn').classList.toggle('err', severe);
+    $('logoWarnShort').hidden = !short;
+    $('logoWarnShort').textContent = short;
+    $('logoWarnShort').classList.toggle('err', severe);
+  }
+
+  async function useLogoFile(file) {
+    if (!file) return;
+    try {
+      logo = await Logo.fromFile(file);
+    } catch (e) {
+      status(e && e.message === 'type' ? 'الملف لازم يكون صورة SVG أو PNG.' : 'مقدرتش أقرا ملف اللوجو ده.', true);
+      return;
+    }
+    $('logoThumb').src = logo.src;
+    $('logoName').textContent = logo.name;
+    if (!Logo.store(logo)) status('اللوجو اشتغل، بس مش هيتحفظ للمرة الجاية (الملف كبير على تخزين المتصفح).');
+    else status('');
+    changed();
+  }
+
+  $('logoFile').addEventListener('change', e => {
+    useLogoFile(e.target.files[0]);
+    e.target.value = '';
+  });
+  const drop = $('logoDrop');
+  ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, () => drop.classList.remove('over')));
+  drop.addEventListener('drop', e => {
+    e.preventDefault();
+    useLogoFile(e.dataTransfer.files[0]);
+  });
+
+  $('logoRemove').addEventListener('click', () => {
+    logo = null;
+    Logo.store(null);
+    $('logoThumb').removeAttribute('src');
+    changed();
+  });
+
+  $('logoSize').addEventListener('input', e => { state.logo.size = Number(e.target.value); changed(); });
+  $('logoMargin').addEventListener('input', e => { state.logo.margin = Number(e.target.value); changed(); });
+  $('logoOpacity').addEventListener('input', e => { state.logo.opacity = Number(e.target.value); changed(); });
+  $('logoPos').addEventListener('click', e => {
+    const b = e.target.closest('button[data-a]');
+    if (!b) return;
+    state.logo.anchor = b.dataset.a;
+    changed();
+  });
+
+  // drag the logo on the preview
+  let drag = null;
+  function toFrame(e) {
+    const r = canvas.getBoundingClientRect();
+    return { u: (e.clientX - r.left) / r.width, v: (e.clientY - r.top) / r.height };
+  }
+  function hitLogo(u, v) {
+    if (!logo) return null;
+    const { W, H } = size();
+    const r = Logo.rect(logo, state.logo, W, H);
+    const x = u * W, y = v * H;
+    return x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h ? r : null;
+  }
+  canvas.addEventListener('pointerdown', e => {
+    const { u, v } = toFrame(e);
+    const r = hitLogo(u, v);
+    if (!r) return;
+    const { W, H } = size();
+    drag = { du: u - (r.x + r.w / 2) / W, dv: v - (r.y + r.h / 2) / H, hw: r.w / 2 / W, hh: r.h / 2 / H };
+    canvas.setPointerCapture(e.pointerId);
+    canvas.classList.add('logo-drag');
+    e.preventDefault();
+  });
+  canvas.addEventListener('pointermove', e => {
+    const { u, v } = toFrame(e);
+    if (!drag) { canvas.classList.toggle('logo-hover', !!hitLogo(u, v)); return; }
+    let cx = Math.min(1 - drag.hw, Math.max(drag.hw, u - drag.du));
+    let cy = Math.min(1 - drag.hh, Math.max(drag.hh, v - drag.dv));
+    if (drag.hw * 2 >= 1) cx = 0.5;
+    if (drag.hh * 2 >= 1) cy = 0.5;
+    if (Math.abs(cx - 0.5) < 0.012) cx = 0.5; // snap to the centre lines
+    if (Math.abs(cy - 0.5) < 0.012) cy = 0.5;
+    Object.assign(state.logo, { anchor: 'custom', cx, cy });
+    changed();
+  });
+  const endDrag = () => { drag = null; canvas.classList.remove('logo-drag'); };
+  canvas.addEventListener('pointerup', endDrag);
+  canvas.addEventListener('pointercancel', endDrag);
+
+  async function restoreLogo() {
+    const o = Logo.stored();
+    if (!o || !o.src) return;
+    try {
+      logo = await Logo.fromStored(o);
+      $('logoThumb').src = logo.src;
+      $('logoName').textContent = logo.name;
+      changed();
+    } catch { Logo.store(null); }
+  }
 
   // ---------------------------------------------------------------- export
   let exporting = false;
@@ -294,11 +449,21 @@
     setTimeout(() => {
       const c = document.createElement('canvas');
       c.width = W; c.height = H;
-      render(c.getContext('2d', { alpha: false }), W, H, t, params());
-      c.toBlob(blob => {
-        if (!blob) { status('المتصفح مقدرش يعمل الصورة دي — غالباً الرزلوشن كبير على الجهاز ده.', true); return; }
-        deliver(blob, `abstract_${state.style}_${W}x${H}.png`);
-      }, 'image/png');
+      try {
+        renderFrame(c.getContext('2d', { alpha: false }), W, H, t, params());
+      } catch (e) {
+        status('حصلت مشكلة في رسم الصورة: ' + e.message, true);
+        return;
+      }
+      try {
+        c.toBlob(blob => {
+          if (!blob) { status('المتصفح مقدرش يعمل الصورة دي — غالباً الرزلوشن كبير على الجهاز ده.', true); return; }
+          deliver(blob, `abstract_${state.style}_${W}x${H}.png`);
+        }, 'image/png');
+      } catch (e) {
+        // a "tainted" canvas: some SVGs (e.g. with <foreignObject>) block export
+        status('المتصفح رفض يحفظ الصورة بسبب ملف اللوجو. جرّب نسخة PNG من اللوجو.', true);
+      }
     }, 30);
   });
 
@@ -321,7 +486,7 @@
           if (w !== W || h !== H) { c.fillStyle = '#000'; c.fillRect(0, 0, w, h); }
           c.save();
           c.beginPath(); c.rect(0, 0, W, H); c.clip();
-          render(c, W, H, t, p);
+          renderFrame(c, W, H, t, p);
           c.restore();
         },
         onProgress: f => {
@@ -355,5 +520,6 @@
   if (location.hash.length > 1) fromHash(location.hash.slice(1));
   stateToForm();
   changed();
+  restoreLogo();
   requestAnimationFrame(loop);
 })();

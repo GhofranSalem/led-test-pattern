@@ -157,6 +157,12 @@
           <label><span data-i18n="ab.opacity">Opacity</span>
             <input type="range" id="logoOpacity" min="0.1" max="1" step="0.05" value="1">
           </label>
+          <label><span data-i18n="bd.blur">Blur behind</span>
+            <input type="range" id="logoBlur" min="0" max="1" step="0.05" value="0">
+          </label>
+          <label><span data-i18n="bd.dim">Darken behind</span>
+            <input type="range" id="logoDim" min="0" max="1" step="0.05" value="0">
+          </label>
           <label><span data-i18n="ab.motion">Motion in video</span><select id="logoAnim"></select></label>
         </div>
       </section>
@@ -200,6 +206,12 @@
             <label class="inline"><span data-i18n="ab.color">Color</span> <input type="color" id="textColor" value="#ffffff"></label>
             <label class="check"><input type="checkbox" id="textShadow" checked> <span data-i18n="ab.shadow">Soft shadow</span></label>
           </div>
+          <label><span data-i18n="bd.blur">Blur behind</span>
+            <input type="range" id="textBlur" min="0" max="1" step="0.05" value="0">
+          </label>
+          <label><span data-i18n="bd.dim">Darken behind</span>
+            <input type="range" id="textDim" min="0" max="1" step="0.05" value="0">
+          </label>
           <label><span data-i18n="ab.motion">Motion in video</span><select id="textAnim"></select></label>
           <p class="note" data-i18n="ab.motionNote">Motion shows in the video and in the preview while it plays. PNG images are exported without motion.</p>
         </div>
@@ -291,6 +303,7 @@
   <script src="logo.js"></script>
   <script src="text.js"></script>
   <script src="anim.js"></script>
+  <script src="backdrop.js"></script>
   <script src="video.js"></script>
   <script src="cabinets.js"></script>
   <script src="abstract.js"></script>

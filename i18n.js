@@ -1,7 +1,7 @@
 /* English / Arabic UI. English is the default.
 
    - Load this in <head> (not deferred): it sets <html lang dir> before the page paints.
-   - Static text: data-i18n="key" (textContent), data-i18n-ph (placeholder),
+   - Static text: data-i18n="key" (textContent, with {vars} from data-i18n-vars JSON), data-i18n-ph (placeholder),
      data-i18n-aria (aria-label), data-i18n-title (title), data-i18n-content (meta content).
    - Script text: I18n.t('key', {var: value}) with {var} placeholders.
    - Pages re-render their dynamic text in I18n.onChange(callback).
@@ -116,15 +116,17 @@
     'home.toolsSub': ['Pick the tool you need. The resolution carries over between tools.', 'اختار الأداة اللي محتاجها. الرزلوشن بيتنقل معاك من أداة للتانية.'],
     'home.abTitle': ['Abstract backgrounds', 'خلفيات Abstract'],
     'home.abDesc': ["Backgrounds drawn at the screen's own resolution, so they stay sharp at any size.", 'خلفيات بتترسم على رزلوشن الشاشة نفسه، فبتفضل حادة مهما كان المقاس.'],
-    'home.abF1': ['16 animated and 6 static styles, 8 palettes, every color editable', '16 ستايل متحرك و 6 ثابتة، و 8 باليتات ألوان تقدر تعدّل فيها'],
+    'home.abF1': ['{a} animated and {s} static styles, 8 palettes, every color editable', '⁦{a}⁩ ستايل متحرك و⁦{s}⁩ ثابت، و⁦8⁩ باليتات ألوان تقدر تعدّل فيها'],
+    'bd.blur': ['Blur behind', 'بلور ورا'],
+    'bd.dim': ['Darken behind', 'تغميق ورا'],
     'home.abF2': ['A PNG image, or an MP4 video that loops seamlessly', 'صورة PNG، أو فيديو MP4 بيلف loop من غير قطع'],
-    'home.abF3': ['Company logo and event name, with motion in video', 'لوجو الشركة واسم الإيفنت، ومعاهم حركة في الفيديو'],
+    'home.abF3': ['Company logo and event name, with a blur panel behind them and motion in video', 'لوجو الشركة واسم الإيفنت، وطبقة بلور وراهم، وحركة في الفيديو'],
     'home.open': ['Open tool', 'افتح الأداة'],
     'home.tpTitle': ['Test patterns', 'صور اختبار'],
     'home.tpDesc': ['Images for testing the screen during setup: size, mapping and color.', 'صور لاختبار الشاشة وقت التركيب: المقاس، والـ mapping، والألوان.'],
-    'home.tpF1': ["Resolution from cabinets, with each cabinet's border and number", 'حساب الرزلوشن بالكابينات، وحدود كل كابينة ورقمها'],
-    'home.tpF2': ['1px grid, circles, color bars and ramps', 'Grid بخطوط 1px، ودواير، و Color bars، وتدرجات'],
-    'home.tpF3': ['Full R/G/B/W fields for dead-pixel checks', 'ألوان كاملة R/G/B/W لاختبار الـ dead pixels'],
+    'home.tpF1': ['Cabinet types by pixel pitch (or your own), and the screen size in meters', 'أنواع الكباين بالـ pixel pitch (أو أنواعك)، ومقاس الشاشة بالمتر'],
+    'home.tpF2': ['Cabinet count, area, weight, power supply and sending-card ports', 'عدد الكباين والمساحة والوزن ومصدر الكهربا وبورتات كارت الإرسال'],
+    'home.tpF3': ['Cabinet borders and numbers, 1px grid, color bars and full R/G/B/W fields', 'حدود الكباين وأرقامها، و Grid بخطوط 1px، و Color bars، وألوان كاملة R/G/B/W'],
     'home.howTitle': ['How it works', 'إزاي بتشتغل'],
     'home.s1': ['Enter the resolution', 'اكتب الرزلوشن'],
     'home.s1d': ['In pixels, from a preset, or from the cabinet count and size.', 'بالبكسل، أو من preset جاهز، أو احسبه بعدد الكابينات ومقاسها.'],
@@ -300,7 +302,8 @@
 
   function apply(root) {
     const r = root || document;
-    r.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+    // data-i18n-vars: JSON values for {placeholders}, set by the page script
+    r.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n, el.dataset.i18nVars ? JSON.parse(el.dataset.i18nVars) : undefined); });
     r.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
     r.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
     r.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.dataset.i18nTitle); });

@@ -167,7 +167,7 @@
 
     try { history.replaceState(null, '', '#' + toQuery(s)); } catch { /* file:// in some browsers */ }
     // carry the resolution over to the other page
-    $('otherTab').href = 'index.html#' + new URLSearchParams(s.cabOn
+    $('otherTab').href = 'abstract.html#' + new URLSearchParams(s.cabOn
       ? { cabOn: 1, cabCols: s.cabCols, cabRows: s.cabRows, cabW: s.cabW, cabH: s.cabH }
       : { w: s.w, h: s.h, cabOn: 0 }).toString();
 

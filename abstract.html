@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LED Abstract Backgrounds</title>
+  <meta name="description" content="خلفيات Abstract صور وفيديو لشاشات الإيفنتات بأي رزلوشن">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700;800&family=Cairo:wght@400;500;600;700;900&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Montserrat:wght@400;700;900&family=Tajawal:wght@400;700;900&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="الصفحة الرئيسية">
+      <h1>LED Screen Content</h1>
+      <span class="aurora" aria-hidden="true"><i></i><i></i><i></i></span>
+    </a>
+    <nav class="tabs" aria-label="الأقسام">
+      <a href="abstract.html" aria-current="page">خلفيات Abstract</a>
+      <a href="test-pattern.html" id="otherTab">صور اختبار</a>
+    </nav>
+  </header>
+
+  <main class="layout">
+    <aside class="panel" id="controls">
+
+      <section>
+        <h2>الرزلوشن</h2>
+        <div class="row">
+          <label>العرض (px)<input type="number" id="w" min="1" step="1" value="1920"></label>
+          <label>الارتفاع (px)<input type="number" id="h" min="1" step="1" value="1080"></label>
+        </div>
+        <label>Presets<select id="preset"></select></label>
+        <label class="check"><input type="checkbox" id="cabOn"> حساب بالكابينات</label>
+        <div id="cabFields" class="cab-fields" hidden>
+          <div class="row">
+            <label>عدد الأعمدة<input type="number" id="cabCols" min="1" value="12"></label>
+            <label>عدد الصفوف<input type="number" id="cabRows" min="1" value="4"></label>
+          </div>
+          <div class="row">
+            <label>عرض الكابينة (px)<input type="number" id="cabW" min="1" value="128"></label>
+            <label>ارتفاع الكابينة (px)<input type="number" id="cabH" min="1" value="128"></label>
+          </div>
+        </div>
+        <p class="meta" id="meta"></p>
+        <p class="warn" id="warn" hidden></p>
+      </section>
+
+      <section>
+        <h2>الستايل</h2>
+        <div class="styles" id="styles"></div>
+      </section>
+
+      <section>
+        <h2>الألوان</h2>
+        <div class="palettes" id="palettes"></div>
+        <div class="colors" id="colors" dir="ltr">
+          <input type="color" data-i="0" aria-label="لون الخلفية" title="الخلفية">
+          <input type="color" data-i="1" aria-label="لون 1">
+          <input type="color" data-i="2" aria-label="لون 2">
+          <input type="color" data-i="3" aria-label="لون 3">
+          <input type="color" data-i="4" aria-label="لون 4">
+        </div>
+        <p class="note">أول لون هو الخلفية.</p>
+      </section>
+
+      <section>
+        <h2>الشكل</h2>
+        <button type="button" id="reseed" class="ghost wide">🎲 شكل جديد</button>
+        <label>الكثافة
+          <input type="range" id="density" min="0" max="1" step="0.05" value="0.5">
+        </label>
+        <label class="check"><input type="checkbox" id="grain" checked> Grain خفيف (بيقلل الـ banding على الشاشة)</label>
+      </section>
+
+      <section>
+        <h2>لوجو الشركة</h2>
+        <label class="drop" id="logoDrop">
+          <input type="file" id="logoFile" accept=".svg,.png,.webp,.jpg,.jpeg,image/svg+xml,image/png,image/webp,image/jpeg">
+          <span id="logoDropText">اختار ملف SVG أو PNG، أو اسحبه هنا</span>
+        </label>
+        <div id="logoControls" hidden>
+          <div class="logo-head">
+            <img id="logoThumb" alt="">
+            <div class="grow">
+              <div id="logoName" class="logo-name"></div>
+              <div id="logoPx" class="note"></div>
+            </div>
+            <button type="button" id="logoRemove" class="ghost small">إزالة</button>
+          </div>
+          <p class="warn" id="logoWarn" hidden></p>
+          <label>الحجم (من ارتفاع الشاشة) <output id="logoSizeOut"></output>
+            <input type="range" id="logoSize" min="0.03" max="1" step="0.01" value="0.25">
+          </label>
+          <div class="pos-wrap">
+            <div class="pos-grid" id="logoPos" dir="ltr" role="group" aria-label="مكان اللوجو">
+              <button type="button" data-a="tl" aria-label="فوق شمال">↖</button>
+              <button type="button" data-a="t" aria-label="فوق">↑</button>
+              <button type="button" data-a="tr" aria-label="فوق يمين">↗</button>
+              <button type="button" data-a="l" aria-label="شمال">←</button>
+              <button type="button" data-a="c" aria-label="النص">●</button>
+              <button type="button" data-a="r" aria-label="يمين">→</button>
+              <button type="button" data-a="bl" aria-label="تحت شمال">↙</button>
+              <button type="button" data-a="b" aria-label="تحت">↓</button>
+              <button type="button" data-a="br" aria-label="تحت يمين">↘</button>
+            </div>
+            <p class="note">اختار مكان، أو اسحب اللوجو بالماوس على المعاينة.</p>
+          </div>
+          <label>البعد عن الحافة
+            <input type="range" id="logoMargin" min="0" max="0.25" step="0.005" value="0.05">
+          </label>
+          <label>الشفافية
+            <input type="range" id="logoOpacity" min="0.1" max="1" step="0.05" value="1">
+          </label>
+          <label>الحركة في الفيديو<select id="logoAnim"></select></label>
+        </div>
+      </section>
+
+      <section>
+        <h2>اسم الإيفنت</h2>
+        <label>النص الرئيسي<input type="text" id="textTitle" maxlength="200" placeholder="مثال: ملتقى الابتكار 2026"></label>
+        <label>سطر تاني (اختياري)<input type="text" id="textSub" maxlength="200" placeholder="مثال: القاهرة · 20 نوفمبر"></label>
+        <div id="textOptions" hidden>
+          <div class="row">
+            <label>الخط<select id="textFont"></select></label>
+            <label>السُمك
+              <select id="textWeight">
+                <option value="400">عادي</option>
+                <option value="700" selected>Bold</option>
+                <option value="900">Black</option>
+              </select>
+            </label>
+          </div>
+          <label>الحجم (من ارتفاع الشاشة) <output id="textSizeOut"></output>
+            <input type="range" id="textSize" min="0.02" max="0.6" step="0.005" value="0.12">
+          </label>
+          <div class="pos-wrap">
+            <div class="pos-grid" id="textPos" dir="ltr" role="group" aria-label="مكان النص">
+              <button type="button" data-a="tl" aria-label="فوق شمال">↖</button>
+              <button type="button" data-a="t" aria-label="فوق">↑</button>
+              <button type="button" data-a="tr" aria-label="فوق يمين">↗</button>
+              <button type="button" data-a="l" aria-label="شمال">←</button>
+              <button type="button" data-a="c" aria-label="النص">●</button>
+              <button type="button" data-a="r" aria-label="يمين">→</button>
+              <button type="button" data-a="bl" aria-label="تحت شمال">↙</button>
+              <button type="button" data-a="b" aria-label="تحت">↓</button>
+              <button type="button" data-a="br" aria-label="تحت يمين">↘</button>
+            </div>
+            <p class="note">اختار مكان، أو اسحب النص بالماوس على المعاينة.</p>
+          </div>
+          <label>البعد عن الحافة
+            <input type="range" id="textMargin" min="0" max="0.25" step="0.005" value="0.05">
+          </label>
+          <div class="row text-row">
+            <label class="inline">اللون <input type="color" id="textColor" value="#ffffff"></label>
+            <label class="check"><input type="checkbox" id="textShadow" checked> ظل خفيف</label>
+          </div>
+          <label>الحركة في الفيديو<select id="textAnim"></select></label>
+          <p class="note">الحركة بتظهر في الفيديو وفي المعاينة وهي شغالة. الصورة PNG بتطلع من غير حركة.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>الحركة (للفيديو)</h2>
+        <label>السرعة
+          <input type="range" id="speed" min="1" max="4" step="1" value="1">
+        </label>
+        <div class="row">
+          <label>المدة
+            <select id="secs">
+              <option value="10">10 ثواني</option>
+              <option value="15">15 ثانية</option>
+              <option value="30" selected>30 ثانية</option>
+              <option value="60">60 ثانية</option>
+            </select>
+          </label>
+          <label>FPS
+            <select id="fps">
+              <option>25</option>
+              <option selected>30</option>
+              <option>50</option>
+              <option>60</option>
+            </select>
+          </label>
+        </div>
+        <p class="note">الفيديو بيلف loop من غير قطع: آخر فريم بيكمّل على أول فريم.</p>
+      </section>
+
+      <section class="actions">
+        <button type="button" id="dlPng" class="primary">تحميل صورة PNG</button>
+        <button type="button" id="dlMp4" class="primary alt">تحميل فيديو MP4</button>
+        <p class="warn" id="logoWarnShort" hidden></p>
+        <p class="note" id="videoInfo"></p>
+        <div class="progress" id="progress" hidden>
+          <div class="bar"><span id="bar"></span></div>
+          <div class="row">
+            <span id="progressText" class="grow"></span>
+            <button type="button" id="cancel" class="ghost">إلغاء</button>
+          </div>
+        </div>
+        <p class="status" id="status" role="status"></p>
+      </section>
+    </aside>
+
+    <section class="stage">
+      <div class="canvas-wrap" id="wrap">
+        <canvas id="canvas" dir="ltr"></canvas>
+      </div>
+      <div class="stage-bar">
+        <button type="button" id="play" class="ghost">⏸ إيقاف الحركة</button>
+        <span class="hint" id="hint">المعاينة متصغرة. الملف بيتعمل بالرزلوشن الكامل.</span>
+      </div>
+    </section>
+  </main>
+
+  <script src="save.js"></script>
+  <script src="vendor/mp4-muxer.js"></script>
+  <script src="generators.js"></script>
+  <script src="logo.js"></script>
+  <script src="text.js"></script>
+  <script src="anim.js"></script>
+  <script src="video.js"></script>
+  <script src="abstract.js"></script>
+</body>
+</html>

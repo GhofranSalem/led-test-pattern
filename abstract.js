@@ -32,6 +32,7 @@
     speed: 1,
     secs: 30,
     fps: 30,
+    vq: 'high',
     logo: { size: 0.25, anchor: 'br', margin: 0.05, cx: 0.5, cy: 0.5, opacity: 1, anim: 'none', bd: { ...Backdrop.DEFAULTS } },
     text: { title: '', sub: '', font: 'Cairo', weight: 700, color: '#ffffff', size: 0.12, anchor: 'c', margin: 0.05, cx: 0.5, cy: 0.5, shadow: true, anim: 'none', bd: { ...Backdrop.DEFAULTS } },
   };
@@ -87,6 +88,7 @@
     BOOL.forEach(k => p.set(k, state[k] ? '1' : '0'));
     p.set('panel', state.panel);
     p.set('style', state.style);
+    p.set('vq', state.vq);
     p.set('pal', state.palette.map(c => c.slice(1)).join('-'));
     const L = state.logo;
     p.set('logo', [L.size, L.anchor, L.margin, +L.cx.toFixed(4), +L.cy.toFixed(4), L.opacity, L.anim, ...Backdrop.serialize(L.bd)].join('~'));
@@ -101,6 +103,7 @@
     const p = new URLSearchParams(h);
     NUM.forEach(k => { if (p.has(k) && isFinite(Number(p.get(k)))) state[k] = Number(p.get(k)); });
     BOOL.forEach(k => { if (p.has(k)) state[k] = p.get(k) === '1'; });
+    if (p.has('vq') && VideoExport.QUALITY[p.get('vq')]) state.vq = p.get('vq');
     if (p.has('panel')) state.panel = p.get('panel').slice(0, 24);
     // links from before weight and power: take them from the cabinet type, if it still matches
     if (!p.has('cabKg')) { state.cabKg = 0; state.cabWatt = 0; }
@@ -149,6 +152,7 @@
     $('grain').checked = state.grain;
     $('secs').value = String(state.secs);
     $('fps').value = String(state.fps);
+    $('vq').value = state.vq;
     document.querySelectorAll('#colors input').forEach(inp => { inp.value = state.palette[Number(inp.dataset.i)]; });
     $('logoSize').value = state.logo.size;
     $('logoMargin').value = state.logo.margin;
@@ -177,6 +181,7 @@
     state.panel = $('panel').value;
     state.cabOn = $('cabOn').checked;
     state.grain = $('grain').checked;
+    state.vq = $('vq').value;
   }
 
   // ---------------------------------------------------------------- UI builders
@@ -329,7 +334,7 @@
     $('meta').textContent = err ? '' : `${W} × ${H}  ·  ${W / g}:${H / g}  ·  ${(W * H / 1e6).toFixed(2)} MP`;
 
     const { VW, VH } = videoSize(W, H);
-    const mb = (Math.min(120e6, Math.max(8e6, VW * VH * state.fps * 0.12)) * state.secs) / 8 / 1048576;
+    const mb = (VideoExport.bitrateFor(VW, VH, state.fps, state.vq) * state.secs) / 8 / 1048576;
     let info = VideoExport.supported()
       ? I18n.t('ab.videoInfo', { w: VW, h: VH, s: state.secs, fps: state.fps, mb: Math.round(mb) })
       : I18n.t('ab.needChrome');
@@ -643,7 +648,7 @@
     const started = performance.now();
     try {
       const blob = await VideoExport.exportMp4({
-        width: VW, height: VH, fps: state.fps, seconds: state.secs, signal: abort.signal,
+        width: VW, height: VH, fps: state.fps, seconds: state.secs, quality: state.vq, signal: abort.signal,
         draw: (c, w, h, t) => {
           if (w !== W || h !== H) { c.fillStyle = '#000'; c.fillRect(0, 0, w, h); }
           c.save();

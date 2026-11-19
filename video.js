@@ -11,19 +11,27 @@
     return typeof global.VideoEncoder === 'function' && typeof global.VideoFrame === 'function';
   }
 
-  function bitrateFor(W, H, fps) {
-    // ~0.12 bits per pixel per frame, clamped to a sane range
-    return Math.round(Math.min(120e6, Math.max(8e6, W * H * fps * 0.12)));
+  // Bits per pixel per frame. Thin moving lines and grain (Flow Lines, Rain,
+  // Starfield…) need far more than smooth gradients: at ~0.12 they came out
+  // smeared and blocky, which shows badly on an LED wall.
+  const QUALITY = { std: 0.25, high: 0.5, max: 1 };
+  const MIN_BITRATE = 15e6, MAX_BITRATE = 240e6;
+
+  function bitrateFor(W, H, fps, quality) {
+    const bpp = QUALITY[quality] || QUALITY.high;
+    return Math.round(Math.min(MAX_BITRATE, Math.max(MIN_BITRATE, W * H * fps * bpp)));
   }
 
-  async function pickConfig(W, H, fps) {
-    const bitrate = bitrateFor(W, H, fps);
-    for (const codec of CODECS) {
-      const config = { codec, width: W, height: H, bitrate, framerate: fps, avc: { format: 'avc' }, latencyMode: 'quality' };
-      try {
-        const res = await VideoEncoder.isConfigSupported(config);
-        if (res.supported) return res.config;
-      } catch { /* try next */ }
+  async function pickConfig(W, H, fps, quality) {
+    // if the encoder refuses the bitrate, step down until it accepts one
+    for (let bitrate = bitrateFor(W, H, fps, quality); bitrate >= 8e6; bitrate = Math.round(bitrate * 0.7)) {
+      for (const codec of CODECS) {
+        const config = { codec, width: W, height: H, bitrate, bitrateMode: 'variable', framerate: fps, avc: { format: 'avc' }, latencyMode: 'quality' };
+        try {
+          const res = await VideoEncoder.isConfigSupported(config);
+          if (res.supported) return res.config;
+        } catch { /* try next */ }
+      }
     }
     return null;
   }
@@ -34,6 +42,7 @@
    * @param {number} o.height  even
    * @param {number} o.fps
    * @param {number} o.seconds
+   * @param {'std'|'high'|'max'} [o.quality]
    * @param {(ctx: CanvasRenderingContext2D, W: number, H: number, t: number) => void} o.draw
    * @param {(f: number) => void} [o.onProgress]
    * @param {AbortSignal} [o.signal]
@@ -42,7 +51,7 @@
   async function exportMp4(o) {
     if (!supported()) throw new Error('unsupported');
     const { width: W, height: H, fps, seconds } = o;
-    const config = await pickConfig(W, H, fps);
+    const config = await pickConfig(W, H, fps, o.quality);
     if (!config) throw new Error('size');
 
     const muxer = new Mp4Muxer.Muxer({
@@ -87,5 +96,5 @@
     return new Blob([muxer.target.buffer], { type: 'video/mp4' });
   }
 
-  global.VideoExport = { supported, exportMp4 };
+  global.VideoExport = { supported, exportMp4, bitrateFor, QUALITY };
 })(window);

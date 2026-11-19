@@ -188,6 +188,7 @@
       { text: `${aspect(W, H)}  ·  ${(W / H).toFixed(3)}:1  ·  ${(W * H / 1e6).toFixed(2)} MP`, size: m * 0.045, weight: 600 },
     ];
     if (s.cabOn) lines.push({ text: `${s.cabCols} × ${s.cabRows} cabinets @ ${s.cabW}×${s.cabH} px`, size: m * 0.045, weight: 600 });
+    if (s.cabOn && s.panelInfo) lines.push({ text: s.panelInfo, size: m * 0.045, weight: 600 });
     if (s.event) lines.push({ text: s.event, size: m * 0.06, weight: 700 });
     if (s.screen) lines.push({ text: s.screen, size: m * 0.05, weight: 600 });
 

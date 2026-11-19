@@ -51,6 +51,9 @@
         <h2>
           <label class="check"><input type="checkbox" id="cabOn"> <span data-i18n="res.cab">Calculate from cabinets</span></label>
         </h2>
+        <label><span data-i18n="panel.label">Panel type (pixel pitch)</span>
+          <select id="panel"></select>
+        </label>
         <div id="cabFields" class="cab-fields">
           <div class="row">
             <label><span data-i18n="cab.cols">Columns</span><input type="number" id="cabCols" min="1" value="12"></label>
@@ -62,6 +65,7 @@
           </div>
           <label class="check"><input type="checkbox" id="cabinets" checked> <span data-i18n="tp.drawCab">Draw cabinet borders and numbers</span></label>
         </div>
+        <p class="physical" id="physical" hidden></p>
       </section>
 
       <section>

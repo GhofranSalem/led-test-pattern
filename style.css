@@ -170,6 +170,7 @@ input.tiny { display: inline-block; width: 72px; margin: 0; padding: 4px 8px; }
 
 .cab-fields { transition: opacity .15s; }
 .cab-fields.off { opacity: .4; pointer-events: none; }
+.physical { margin: 12px 0 0; color: var(--color-mute-gray); font-size: 12px; line-height: 18px; }
 
 /* segmented choice (test-pattern backgrounds) */
 .seg { display: flex; flex-wrap: wrap; gap: 8px; }

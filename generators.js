@@ -651,6 +651,95 @@
     ctx.globalCompositeOperation = 'source-over';
   }
 
+  // ---------------------------------------------------------------- dot rows
+  // Rows of big engraved discs; a few rows light up as coloured rings that
+  // slide across and away. Each lit row moves a whole number of passes per loop.
+  let hatch = null, hatchKey = '';
+  function hatchPattern(ctx, size, col) {
+    const s = Math.max(4, Math.round(size)), key = s + col;
+    if (hatchKey !== key) {
+      hatch = document.createElement('canvas');
+      hatch.width = hatch.height = s;
+      const c = hatch.getContext('2d');
+      c.strokeStyle = col;
+      c.lineWidth = Math.max(1, s * 0.22);
+      c.beginPath();
+      for (const o of [-s, 0, s]) { c.moveTo(o, s); c.lineTo(o + s, 0); }
+      c.stroke();
+      hatchKey = key;
+    }
+    return ctx.createPattern(hatch, 'repeat');
+  }
+
+  function dotrows(ctx, W, H, t, p) {
+    const { bg, cols, r } = prep(p);
+    const m = Math.min(W, H);
+    ctx.fillStyle = rgba(bg, 1);
+    ctx.fillRect(0, 0, W, H);
+    const g = m / (6 + p.density * 8), R = g * 0.46;
+    const rows = Math.ceil(H / g - 0.2), ncol = Math.ceil(W / g) + 1;
+    const x0 = (W - (ncol - 1) * g) / 2, y0 = (H - (rows - 1) * g) / 2;
+    const disc = mix(bg, WHITE, 0.2);
+    const pat = hatchPattern(ctx, g / 20, rgba(mix(bg, WHITE, 0.5), 1));
+
+    // a band of 1–3 neighbouring rows lights up, plus maybe one more elsewhere
+    const lit = new Map();
+    const band = 1 + Math.round(p.density * 2), start = Math.floor(r() * (rows - band + 1));
+    for (let i = 0; i < band; i++) lit.set(start + i, i);
+    if (r() < 0.5 + p.density * 0.5) lit.set(Math.floor(r() * rows), band);
+    // the band moves together, each row a little behind the one above;
+    // the extra row goes its own way
+    const dir = r() < 0.5 ? 1 : -1, ph = r(), len = Math.round(ncol * (0.4 + r() * 0.3));
+    const runs = new Map();
+    lit.forEach((i, row) => {
+      const extra = i === band;
+      runs.set(row, {
+        dir: extra ? -dir : dir,
+        len: extra ? Math.round(ncol * (0.3 + r() * 0.3)) : len,
+        ph: extra ? r() : ph + i * 2.5 / (ncol + len),
+        k: p.speed,
+        c: cols[i % cols.length],
+      });
+    });
+
+    for (let row = 0; row < rows; row++) {
+      const y = y0 + row * g;
+      const run = runs.get(row);
+      // the lit run enters from one side and leaves at the other
+      const head = run ? frac(run.ph + t * run.k) * (ncol + run.len) - run.len : 0;
+      for (let ci = 0; ci < ncol; ci++) {
+        const x = x0 + ci * g;
+        const wear = r();                                   // per-disc variation, same every frame
+        let a = 0;
+        if (run) {
+          const u = (run.dir > 0 ? ci : ncol - 1 - ci) - head;
+          a = clamp01(Math.min(u + 1, run.len - u));       // 1 step fade in and out
+        }
+        // engraved disc
+        ctx.fillStyle = rgba(mix(disc, bg, wear * 0.35), 1);
+        ctx.beginPath(); ctx.arc(x, y, R, 0, TAU); ctx.fill();
+        ctx.globalAlpha = 0.7 + wear * 0.3;
+        ctx.fillStyle = pat; ctx.fill();
+        ctx.globalAlpha = 1;
+        if (a <= 0) continue;
+        // coloured ring with a small engraved centre
+        const rr = R * (0.7 + 0.3 * a);
+        const gr = ctx.createRadialGradient(x - rr * 0.3, y - rr * 0.3, 0, x, y, rr);
+        gr.addColorStop(0, rgba(mix(run.c, WHITE, 0.35), a));
+        gr.addColorStop(1, rgba(run.c, a));
+        ctx.fillStyle = gr;
+        ctx.beginPath(); ctx.arc(x, y, rr, 0, TAU); ctx.fill();
+        ctx.fillStyle = rgba(mix(run.c, bg, 0.45), a);
+        ctx.beginPath(); ctx.arc(x, y, rr * 0.42, 0, TAU); ctx.fill();
+        ctx.fillStyle = rgba(mix(disc, WHITE, 0.45), a);
+        ctx.beginPath(); ctx.arc(x, y, rr * 0.34, 0, TAU); ctx.fill();
+        ctx.globalAlpha = a * 0.5;
+        ctx.fillStyle = pat; ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+  }
+
   // ================================================================ static styles (ignore t)
   /* Static styles take two more controls besides density and the seed:
        p.scale  0..1  size of the shapes (0.5 = default)  → sc in 0.5..2
@@ -1205,6 +1294,7 @@
     { id: 'rain', name: 'Light Rain', draw: rain, kind: 'animated' },
     { id: 'coderain', name: 'Code Rain', draw: coderain, kind: 'animated' },
     { id: 'meteors', name: 'Meteor Shower', draw: meteors, kind: 'animated' },
+    { id: 'dotrows', name: 'Dot Rows', draw: dotrows, kind: 'animated' },
     { id: 'lowpoly', name: 'Low Poly', draw: lowpoly, kind: 'animated' },
     { id: 'gradient', name: 'Smooth Gradient', draw: gradient, kind: 'animated' },
     { id: 'mesh', name: 'Mesh Gradient', draw: mesh, kind: 'static' },

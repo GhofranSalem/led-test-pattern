@@ -8,12 +8,13 @@
   'use strict';
 
   const TYPES = [
-    { id: 'none', name: 'بدون حركة' },
-    { id: 'fade', name: 'ظهور واختفاء تدريجي' },
-    { id: 'slide', name: 'طلوع من تحت' },
-    { id: 'zoom', name: 'تكبير مع الظهور' },
-    { id: 'float', name: 'طفو هادي (loop)' },
-    { id: 'pulse', name: 'نبض (loop)' },
+    // names are i18n keys (i18n.js)
+    { id: 'none', name: 'anim.none' },
+    { id: 'fade', name: 'anim.fade' },
+    { id: 'slide', name: 'anim.slide' },
+    { id: 'zoom', name: 'anim.zoom' },
+    { id: 'float', name: 'anim.float' },
+    { id: 'pulse', name: 'anim.pulse' },
   ];
   const IDENTITY = { alpha: 1, dy: 0, scale: 1 };
   const ease = x => 1 - Math.pow(1 - x, 3);

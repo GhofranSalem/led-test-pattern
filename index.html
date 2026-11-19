@@ -1,15 +1,16 @@
 <!doctype html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>LED Screen Content</title>
-  <meta name="description" content="أدوات لعمل محتوى شاشات الـ LED بأي رزلوشن: خلفيات Abstract صور وفيديو، وصور اختبار.">
+  <title data-i18n="home.docTitle">LED Screen Content</title>
+  <meta name="description" data-i18n-content="home.desc" content="Tools for making LED screen content at any resolution: abstract background images and videos, and test patterns.">
   <script>
     // links shared before the home page existed pointed at index.html with the
     // backgrounds settings in the hash: send them on to the backgrounds tool
     if (/(^#|&)(w|style|pal|cabOn)=/.test(location.hash)) location.replace('abstract.html' + location.hash);
   </script>
+  <script src="i18n.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
@@ -17,15 +18,16 @@
 </head>
 <body class="home">
   <header class="topbar">
-    <a class="brand" href="index.html" aria-label="الصفحة الرئيسية">
+    <a class="brand" href="index.html" aria-label="Home" data-i18n-aria="nav.home">
       <h1>LED Screen Content</h1>
       <span class="aurora" aria-hidden="true"><i></i><i></i><i></i></span>
     </a>
-    <nav class="tabs" aria-label="الأقسام">
-      <a href="#tools">الأدوات</a>
-      <a href="#how">إزاي بتشتغل</a>
+    <nav class="tabs" aria-label="Sections" data-i18n-aria="nav.sections">
+      <a href="#tools" data-i18n="home.navTools">Tools</a>
+      <a href="#how" data-i18n="home.navHow">How it works</a>
     </nav>
-    <a class="pill pill-primary pill-sm nav-cta" href="abstract.html">ابدأ</a>
+    <button type="button" class="lang-toggle" data-lang-toggle data-i18n="lang.toggle" data-i18n-aria="lang.toggleAria" aria-label="Switch to Arabic">العربية</button>
+    <a class="pill pill-primary pill-sm nav-cta" href="abstract.html" data-i18n="home.start">Start</a>
   </header>
 
   <main>
@@ -33,11 +35,11 @@
       <div class="container hero-inner">
         <div class="hero-copy">
           <p class="eyebrow mono">PNG · MP4 · any resolution</p>
-          <h2 class="hero-title">محتوى لشاشات الـ LED<br>بالرزلوشن بتاعها بالظبط</h2>
-          <p class="lede">خلفيات Abstract وصور اختبار بأي مقاس، حتى لو غريب أو عريض جدًا. صور PNG وفيديو MP4 بيلف من غير قطع، ومعاهم لوجو الشركة واسم الإيفنت. كله بيشتغل في المتصفح.</p>
+          <h2 class="hero-title"><span data-i18n="home.h1a">Content for LED screens,</span><br><span data-i18n="home.h1b">at their exact resolution</span></h2>
+          <p class="lede" data-i18n="home.lede">Abstract backgrounds and test patterns at any size, even unusual or ultra-wide ones. PNG images and seamlessly looping MP4 videos, with your company logo and event name. Everything runs in the browser.</p>
           <div class="cta-row">
-            <a class="pill pill-primary" href="abstract.html">اعمل خلفية</a>
-            <a class="pill pill-ghost" href="test-pattern.html">صور اختبار</a>
+            <a class="pill pill-primary" href="abstract.html" data-i18n="home.ctaBg">Make a background</a>
+            <a class="pill pill-ghost" href="test-pattern.html" data-i18n="home.ctaTest">Test patterns</a>
           </div>
         </div>
         <div class="hero-art" aria-hidden="true">
@@ -59,36 +61,36 @@
 
     <section id="tools" class="container section">
       <div class="section-head">
-        <h2 class="section-title">الأدوات</h2>
-        <p class="section-sub">اختار الأداة اللي محتاجها. الرزلوشن بيتنقل معاك من أداة للتانية.</p>
+        <h2 class="section-title" data-i18n="home.toolsTitle">Tools</h2>
+        <p class="section-sub" data-i18n="home.toolsSub">Pick the tool you need. The resolution carries over between tools.</p>
       </div>
       <div class="tool-grid">
         <a class="tool-card" href="abstract.html">
           <canvas class="tool-preview" id="prevAbstract" width="800" height="340" dir="ltr"></canvas>
           <div class="tool-body">
             <span class="tag mono">abstract.html</span>
-            <h3>خلفيات Abstract</h3>
-            <p>خلفيات بتترسم على رزلوشن الشاشة نفسه، فبتفضل حادة مهما كان المقاس.</p>
+            <h3 data-i18n="home.abTitle">Abstract backgrounds</h3>
+            <p data-i18n="home.abDesc">Backgrounds drawn at the screen's own resolution, so they stay sharp at any size.</p>
             <ul class="feats">
-              <li>6 ستايلات و 8 باليتات ألوان، وتقدر تعدّل أي لون</li>
-              <li>صورة PNG، أو فيديو MP4 بيلف loop من غير قطع</li>
-              <li>لوجو الشركة واسم الإيفنت، ومعاهم حركة في الفيديو</li>
+              <li data-i18n="home.abF1">6 styles and 8 color palettes, every color editable</li>
+              <li data-i18n="home.abF2">A PNG image, or an MP4 video that loops seamlessly</li>
+              <li data-i18n="home.abF3">Company logo and event name, with motion in video</li>
             </ul>
-            <span class="pill pill-primary pill-sm">افتح الأداة</span>
+            <span class="pill pill-primary pill-sm" data-i18n="home.open">Open tool</span>
           </div>
         </a>
         <a class="tool-card" href="test-pattern.html">
           <canvas class="tool-preview" id="prevTest" width="800" height="340" dir="ltr"></canvas>
           <div class="tool-body">
             <span class="tag mono">test-pattern.html</span>
-            <h3>صور اختبار</h3>
-            <p>صور لاختبار الشاشة وقت التركيب: المقاس، والـ mapping، والألوان.</p>
+            <h3 data-i18n="home.tpTitle">Test patterns</h3>
+            <p data-i18n="home.tpDesc">Images for testing the screen during setup: size, mapping and color.</p>
             <ul class="feats">
-              <li>حساب الرزلوشن بالكابينات، وحدود كل كابينة ورقمها</li>
-              <li>Grid بخطوط 1px، ودواير، و Color bars، وتدرجات</li>
-              <li>ألوان كاملة R/G/B/W لاختبار الـ dead pixels</li>
+              <li data-i18n="home.tpF1">Resolution from cabinets, with each cabinet's border and number</li>
+              <li data-i18n="home.tpF2">1px grid, circles, color bars and ramps</li>
+              <li data-i18n="home.tpF3">Full R/G/B/W fields for dead-pixel checks</li>
             </ul>
-            <span class="pill pill-ghost pill-sm">افتح الأداة</span>
+            <span class="pill pill-ghost pill-sm" data-i18n="home.open">Open tool</span>
           </div>
         </a>
       </div>
@@ -96,32 +98,32 @@
 
     <section id="how" class="container section">
       <div class="section-head">
-        <h2 class="section-title">إزاي بتشتغل</h2>
+        <h2 class="section-title" data-i18n="home.howTitle">How it works</h2>
       </div>
       <ol class="steps">
         <li class="step">
           <span class="step-num mono">01</span>
-          <h3>اكتب الرزلوشن</h3>
-          <p>بالبكسل، أو من preset جاهز، أو احسبه بعدد الكابينات ومقاسها.</p>
+          <h3 data-i18n="home.s1">Enter the resolution</h3>
+          <p data-i18n="home.s1d">In pixels, from a preset, or from the cabinet count and size.</p>
         </li>
         <li class="step">
           <span class="step-num mono">02</span>
-          <h3>اختار الشكل</h3>
-          <p>الستايل والألوان، وضيف اللوجو واسم الإيفنت وحدد مكانهم وحركتهم.</p>
+          <h3 data-i18n="home.s2">Choose the look</h3>
+          <p data-i18n="home.s2d">Style and colors, plus the logo and event name with their position and motion.</p>
         </li>
         <li class="step">
           <span class="step-num mono">03</span>
-          <h3>حمّل وشغّل</h3>
-          <p>نزّل PNG أو MP4 بالمقاس بالظبط، وشغّله على Resolume على الشاشة.</p>
+          <h3 data-i18n="home.s3">Download and play</h3>
+          <p data-i18n="home.s3d">Get a PNG or MP4 at the exact size and play it in Resolume on the screen.</p>
         </li>
       </ol>
     </section>
 
     <section class="container section">
       <dl class="stats">
-        <div class="stat"><dt class="stat-num mono">32767</dt><dd>أقصى عرض أو ارتفاع بالبكسل</dd></div>
-        <div class="stat"><dt class="stat-num mono">60</dt><dd>فريم في الثانية للفيديو</dd></div>
-        <div class="stat"><dt class="stat-num mono">0</dt><dd>سيرفر: كله بيتعمل على جهازك</dd></div>
+        <div class="stat"><dt class="stat-num mono">32767</dt><dd data-i18n="home.stat1">Max width or height in pixels</dd></div>
+        <div class="stat"><dt class="stat-num mono">60</dt><dd data-i18n="home.stat2">Frames per second for video</dd></div>
+        <div class="stat"><dt class="stat-num mono">0</dt><dd data-i18n="home.stat3">Servers: everything runs on your device</dd></div>
       </dl>
     </section>
   </main>
@@ -129,7 +131,7 @@
   <footer class="site-footer">
     <div class="container footer-inner">
       <span class="mono">LED Screen Content</span>
-      <span>الفيديو محتاج Chrome أو Edge على الكمبيوتر.</span>
+      <span data-i18n="home.footer">Video export needs Chrome or Edge on a computer.</span>
     </div>
   </footer>
 

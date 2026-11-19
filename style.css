@@ -84,6 +84,7 @@ body {
 
 .tabs { display: flex; gap: 4px; margin-inline-start: auto; }
 .tabs a {
+  white-space: nowrap;
   color: var(--color-mute-gray);
   text-decoration: none;
   padding: 6px 16px;
@@ -234,7 +235,7 @@ button.small { padding: 4px 12px; font-size: 12px; }
 .swatches button[data-color="#000000"] { color: var(--color-bone-white); }
 
 /* ---------- feedback: weight and contrast, no signal colours ---------- */
-.meta { margin: 4px 0 0; color: var(--color-mute-gray); direction: ltr; text-align: right; font-size: 12px; line-height: 18px; }
+.meta { margin: 4px 0 0; color: var(--color-mute-gray); direction: ltr; text-align: left; font-size: 12px; line-height: 18px; }
 .note { color: var(--color-ash); font-size: 12px; line-height: 18px; margin: 8px 0 0; }
 .warn {
   margin: 12px 0 0;
@@ -442,7 +443,7 @@ output { color: var(--color-bone-white); direction: ltr; unicode-bidi: isolate; 
   padding-top: 112px;
   padding-bottom: 112px;
 }
-.eyebrow { margin: 0 0 16px; font-size: 13px; line-height: 20px; color: var(--color-mute-gray); direction: ltr; text-align: right; }
+.eyebrow { margin: 0 0 16px; font-size: 13px; line-height: 20px; color: var(--color-mute-gray); direction: ltr; text-align: left; }
 .hero-title {
   margin: 0;
   font-size: 48px;
@@ -523,14 +524,14 @@ output { color: var(--color-bone-white); direction: ltr; unicode-bidi: isolate; 
   border: 1px solid var(--color-wire-gray);
   border-radius: var(--radius-card);
 }
-.step-num { display: block; font-size: 40px; line-height: 40px; letter-spacing: -0.08em; color: var(--color-bone-white); direction: ltr; text-align: right; }
+.step-num { display: block; font-size: 40px; line-height: 40px; letter-spacing: -0.08em; color: var(--color-bone-white); direction: ltr; text-align: left; }
 .step h3 { margin: 20px 0 8px; font-size: 18px; line-height: 28px; font-weight: 600; }
 .step p { margin: 0; font-size: 14px; line-height: 22px; color: var(--color-mute-gray); }
 
 .stats { margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--color-smoke); border-bottom: 1px solid var(--color-smoke); }
 .stat { padding: 32px 24px; }
 .stat + .stat { border-inline-start: 1px solid var(--color-smoke); }
-.stat-num { font-size: 60px; line-height: 64px; letter-spacing: -0.08em; color: var(--color-bone-white); direction: ltr; text-align: right; }
+.stat-num { font-size: 60px; line-height: 64px; letter-spacing: -0.08em; color: var(--color-bone-white); direction: ltr; text-align: left; }
 .stat dd { margin: 12px 0 0; font-size: 14px; line-height: 20px; color: var(--color-mute-gray); }
 
 .site-footer { margin-top: 80px; border-top: 1px solid var(--color-smoke); }
@@ -552,4 +553,33 @@ output { color: var(--color-bone-white); direction: ltr; unicode-bidi: isolate; 
   .stats { grid-template-columns: 1fr; }
   .stat + .stat { border-inline-start: 0; border-top: 1px solid var(--color-smoke); }
   .stat-num { font-size: 48px; line-height: 52px; }
+}
+
+/* ---------- language ---------- */
+/* LTR-isolated numeric blocks line up with the reading direction */
+[dir=rtl] .meta, [dir=rtl] .eyebrow, [dir=rtl] .step-num, [dir=rtl] .stat-num { text-align: right; }
+
+.lang-toggle {
+  flex: none;
+  padding: 4px 12px;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--color-mute-gray);
+  border-color: var(--color-wire-gray);
+}
+.lang-toggle:hover { color: var(--color-bone-white); border-color: var(--color-bone-white); }
+[dir=ltr] .lang-toggle { font-family: "Cairo", var(--font-sans); }
+[dir=rtl] .lang-toggle { font-family: "Geist", var(--font-sans); letter-spacing: var(--tracking); }
+.tabs + .lang-toggle { margin-inline-start: 4px; }
+
+/* English headings get the system's tight tracking; Arabic never does */
+[dir=ltr] h2, [dir=ltr] h3, [dir=ltr] .hero-title, [dir=ltr] .section-title, [dir=ltr] .tabs a, [dir=ltr] button, [dir=ltr] .pill, [dir=ltr] label {
+  letter-spacing: var(--tracking);
+}
+
+@media (max-width: 600px) {
+  .topbar { gap: 8px; }
+  .topbar h1 { font-size: 13px; }
+  .tabs a { padding: 6px 8px; font-size: 12px; }
+  .lang-toggle { padding: 4px 8px; font-size: 12px; }
 }

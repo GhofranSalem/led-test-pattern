@@ -9,10 +9,10 @@
   const BUILTIN_PRESETS = [
     ['Full HD', 1920, 1080],
     ['4K UHD', 3840, 2160],
-    ['Full HD عمودي', 1080, 1920],
-    ['2 × Full HD عرض', 3840, 1080],
-    ['3 × Full HD عرض', 5760, 1080],
-    ['4 × Full HD عرض', 7680, 1080],
+    ['preset.portrait', 1080, 1920],
+    ['preset.wide2', 3840, 1080],
+    ['preset.wide3', 5760, 1080],
+    ['preset.wide4', 7680, 1080],
     ['HD', 1280, 720],
   ];
   const STORE_KEY = 'ledtp.presets';
@@ -50,10 +50,10 @@
   }
 
   function validate(s) {
-    if (s.w < 1 || s.h < 1) return { error: 'العرض والارتفاع لازم يكونوا أكبر من صفر.' };
-    if (s.w > MAX_SIDE || s.h > MAX_SIDE) return { error: `أقصى طول لأي ضلع في المتصفح ${MAX_SIDE} px.` };
-    if (s.w * s.h > MAX_AREA) return { error: `الصورة أكبر من حد المتصفح (${(MAX_AREA / 1e6).toFixed(0)} ميجا بكسل).` };
-    if (s.w * s.h > SAFARI_AREA) return { warn: 'الرزلوشن ده ممكن مايشتغلش على Safari في الآيفون/الآيباد. استخدم Chrome أو Edge على الكمبيوتر.' };
+    if (s.w < 1 || s.h < 1) return { error: I18n.t('err.zero') };
+    if (s.w > MAX_SIDE || s.h > MAX_SIDE) return { error: I18n.t('err.side', { max: MAX_SIDE }) };
+    if (s.w * s.h > MAX_AREA) return { error: I18n.t('err.areaMp', { mp: (MAX_AREA / 1e6).toFixed(0) }) };
+    if (s.w * s.h > SAFARI_AREA) return { warn: I18n.t('warn.safari') };
     return {};
   }
 
@@ -86,15 +86,15 @@
   function fillPresets() {
     const sel = $('preset');
     sel.innerHTML = '';
-    sel.add(new Option('— اختار —', ''));
+    sel.add(new Option(I18n.t('res.pick'), ''));
     const g1 = document.createElement('optgroup');
-    g1.label = 'جاهزة';
-    BUILTIN_PRESETS.forEach(([n, w, h]) => g1.appendChild(new Option(`${n} — ${w}×${h}`, `b:${w}x${h}`)));
+    g1.label = I18n.t('tp.groupBuiltin');
+    BUILTIN_PRESETS.forEach(([n, w, h]) => g1.appendChild(new Option(`${I18n.t(n)} — ${w}×${h}`, `b:${w}x${h}`)));
     sel.appendChild(g1);
     const saved = loadSaved();
     if (saved.length) {
       const g2 = document.createElement('optgroup');
-      g2.label = 'محفوظة';
+      g2.label = I18n.t('tp.groupSaved');
       saved.forEach((p, i) => g2.appendChild(new Option(`${p.name} — ${p.w}×${p.h}`, `s:${i}`)));
       sel.appendChild(g2);
     }
@@ -120,11 +120,11 @@
     $('presetName').value = '';
     const list = loadSaved();
     list.push({ name, w: s.w, h: s.h, state: s });
-    if (!storeSaved(list)) { status('مقدرتش أحفظ — المتصفح مانع التخزين.', true); return; }
+    if (!storeSaved(list)) { status(I18n.t('tp.storeFail'), true); return; }
     fillPresets();
     $('preset').value = `s:${list.length - 1}`;
     $('deletePreset').hidden = false;
-    status('اتحفظ.');
+    status(I18n.t('tp.presetSaved'));
   });
 
   $('deletePreset').addEventListener('click', () => {
@@ -190,16 +190,16 @@
   }
 
   function saveCanvas(cv, name) {
-    status('بيتجهز…');
+    status(I18n.t('st.preparing'));
     cv.toBlob(blob => {
       if (!blob) {
-        status('المتصفح مقدرش يعمل الصورة دي — غالباً الرزلوشن كبير على الجهاز ده.', true);
+        status(I18n.t('st.tooBig'), true);
         return;
       }
       window.saveFile(blob, name).then(r => {
-        if (r === 'saved') status(`اتحمّل: ${name} (${(blob.size / 1048576).toFixed(1)} MB)`);
-        else if (r === 'declined') status('التحميل اتلغى.');
-        else status('مقدرتش أحفظ الملف.', true);
+        if (r === 'saved') status(I18n.t('st.saved', { name, mb: (blob.size / 1048576).toFixed(1) }));
+        else if (r === 'declined') status(I18n.t('st.declined'));
+        else status(I18n.t('st.saveFailed'), true);
       });
     }, 'image/png');
   }
@@ -233,9 +233,9 @@
     const url = location.href.split('#')[0] + '#' + toQuery(readState());
     try {
       await navigator.clipboard.writeText(url);
-      status('الرابط اتنسخ.');
+      status(I18n.t('tp.linkCopied'));
     } catch {
-      status('انسخ الرابط: ' + url);
+      status(I18n.t('tp.copyThis', { url }));
     }
   });
 
@@ -246,6 +246,14 @@
     update();
   });
 
+  I18n.apply();
+  I18n.onChange(() => {
+    const keep = $('preset').value;
+    fillPresets();
+    $('preset').value = keep;
+    status('');
+    update();
+  });
   fillPresets();
   if (location.hash.length > 1) applyState(fromQuery(location.hash.slice(1)));
   update();

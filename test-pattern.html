@@ -1,10 +1,11 @@
 <!doctype html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>LED Test Pattern</title>
-  <meta name="description" content="مولّد صور اختبار لشاشات الإيفنتات بأي رزلوشن">
+  <title data-i18n="tp.docTitle">LED Test Pattern</title>
+  <meta name="description" data-i18n-content="tp.desc" content="Test-pattern generator for event screens at any resolution.">
+  <script src="i18n.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
@@ -12,34 +13,35 @@
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="index.html" aria-label="الصفحة الرئيسية">
+    <a class="brand" href="index.html" aria-label="Home" data-i18n-aria="nav.home">
       <h1>LED Screen Content</h1>
       <span class="aurora" aria-hidden="true"><i></i><i></i><i></i></span>
     </a>
-    <nav class="tabs" aria-label="الأقسام">
-      <a href="abstract.html" id="otherTab">خلفيات Abstract</a>
-      <a href="test-pattern.html" aria-current="page">صور اختبار</a>
+    <nav class="tabs" aria-label="Sections" data-i18n-aria="nav.sections">
+      <a href="abstract.html" id="otherTab" data-i18n="nav.abstract">Backgrounds</a>
+      <a href="test-pattern.html" aria-current="page" data-i18n="nav.test">Test patterns</a>
     </nav>
+    <button type="button" class="lang-toggle" data-lang-toggle data-i18n="lang.toggle" data-i18n-aria="lang.toggleAria" aria-label="Switch to Arabic">العربية</button>
   </header>
 
   <main class="layout">
     <aside class="panel" id="controls">
 
       <section>
-        <h2>الرزلوشن</h2>
+        <h2 data-i18n="res.title">Resolution</h2>
         <div class="row">
-          <label>العرض (px)<input type="number" id="w" min="1" step="1" value="1920"></label>
-          <label>الارتفاع (px)<input type="number" id="h" min="1" step="1" value="1080"></label>
+          <label><span data-i18n="res.w">Width (px)</span><input type="number" id="w" min="1" step="1" value="1920"></label>
+          <label><span data-i18n="res.h">Height (px)</span><input type="number" id="h" min="1" step="1" value="1080"></label>
         </div>
         <div class="row">
-          <label class="grow">Presets
+          <label class="grow"><span data-i18n="res.presets">Presets</span>
             <select id="preset"></select>
           </label>
         </div>
         <div class="row btns">
-          <input type="text" id="presetName" class="grow" placeholder="اسم الـ preset (مثلاً: المسرح الرئيسي)" aria-label="اسم الـ preset">
-          <button type="button" id="savePreset" class="ghost">حفظ</button>
-          <button type="button" id="deletePreset" class="ghost" hidden>حذف الـ preset</button>
+          <input type="text" id="presetName" class="grow" placeholder="Preset name (e.g. Main stage)" data-i18n-ph="tp.presetPh" aria-label="Preset name" data-i18n-aria="tp.presetAria">
+          <button type="button" id="savePreset" class="ghost" data-i18n="tp.save">Save</button>
+          <button type="button" id="deletePreset" class="ghost" hidden data-i18n="tp.delete">Delete preset</button>
         </div>
         <p class="meta" id="meta"></p>
         <p class="warn" id="warn" hidden></p>
@@ -47,53 +49,53 @@
 
       <section>
         <h2>
-          <label class="check"><input type="checkbox" id="cabOn"> حساب بالكابينات</label>
+          <label class="check"><input type="checkbox" id="cabOn"> <span data-i18n="res.cab">Calculate from cabinets</span></label>
         </h2>
         <div id="cabFields" class="cab-fields">
           <div class="row">
-            <label>عدد الأعمدة<input type="number" id="cabCols" min="1" value="12"></label>
-            <label>عدد الصفوف<input type="number" id="cabRows" min="1" value="4"></label>
+            <label><span data-i18n="cab.cols">Columns</span><input type="number" id="cabCols" min="1" value="12"></label>
+            <label><span data-i18n="cab.rows">Rows</span><input type="number" id="cabRows" min="1" value="4"></label>
           </div>
           <div class="row">
-            <label>عرض الكابينة (px)<input type="number" id="cabW" min="1" value="128"></label>
-            <label>ارتفاع الكابينة (px)<input type="number" id="cabH" min="1" value="128"></label>
+            <label><span data-i18n="cab.w">Cabinet width (px)</span><input type="number" id="cabW" min="1" value="128"></label>
+            <label><span data-i18n="cab.h">Cabinet height (px)</span><input type="number" id="cabH" min="1" value="128"></label>
           </div>
-          <label class="check"><input type="checkbox" id="cabinets" checked> رسم حدود الكابينات وأرقامها</label>
+          <label class="check"><input type="checkbox" id="cabinets" checked> <span data-i18n="tp.drawCab">Draw cabinet borders and numbers</span></label>
         </div>
       </section>
 
       <section>
-        <h2>الخلفية</h2>
+        <h2 data-i18n="tp.bg">Background</h2>
         <div class="seg" id="bgSeg">
-          <label><input type="radio" name="bg" value="black" checked><span>أسود</span></label>
-          <label><input type="radio" name="bg" value="solid"><span>لون</span></label>
-          <label><input type="radio" name="bg" value="bars"><span>Color bars</span></label>
-          <label><input type="radio" name="bg" value="gray"><span>تدرج رمادي</span></label>
-          <label><input type="radio" name="bg" value="rgb"><span>تدرج RGB</span></label>
+          <label><input type="radio" name="bg" value="black" checked><span data-i18n="bg.black">Black</span></label>
+          <label><input type="radio" name="bg" value="solid"><span data-i18n="bg.solid">Color</span></label>
+          <label><input type="radio" name="bg" value="bars"><span data-i18n="bg.bars">Color bars</span></label>
+          <label><input type="radio" name="bg" value="gray"><span data-i18n="bg.gray">Gray ramp</span></label>
+          <label><input type="radio" name="bg" value="rgb"><span data-i18n="bg.rgb">RGB ramp</span></label>
         </div>
-        <label class="inline" id="solidWrap">لون الخلفية <input type="color" id="solid" value="#1a2440"></label>
+        <label class="inline" id="solidWrap"><span data-i18n="tp.bgColor">Background color</span> <input type="color" id="solid" value="#1a2440"></label>
       </section>
 
       <section>
-        <h2>العناصر</h2>
-        <label class="check"><input type="checkbox" id="grid" checked> Grid كل
+        <h2 data-i18n="tp.elements">Elements</h2>
+        <label class="check"><input type="checkbox" id="grid" checked> <span data-i18n="tp.gridEvery">Grid every</span>
           <input type="number" id="gridStep" min="2" value="64" class="tiny"> px</label>
-        <label class="check"><input type="checkbox" id="circles" checked> دواير (للتأكد من الـ aspect ratio)</label>
-        <label class="check"><input type="checkbox" id="cross" checked> Crosshair وأقطار</label>
-        <label class="check"><input type="checkbox" id="border" checked> إطار 1px وأسهم الأركان</label>
-        <label class="check"><input type="checkbox" id="info" checked> بيانات الرزلوشن في النص</label>
+        <label class="check"><input type="checkbox" id="circles" checked> <span data-i18n="tp.circles">Circles (to check the aspect ratio)</span></label>
+        <label class="check"><input type="checkbox" id="cross" checked> <span data-i18n="tp.cross">Crosshair and diagonals</span></label>
+        <label class="check"><input type="checkbox" id="border" checked> <span data-i18n="tp.border">1px border and corner arrows</span></label>
+        <label class="check"><input type="checkbox" id="info" checked> <span data-i18n="tp.info">Resolution info in the center</span></label>
       </section>
 
       <section>
-        <h2>نص على الصورة</h2>
-        <label>اسم الإيفنت<input type="text" id="event" placeholder="مثال: Expo 2026"></label>
-        <label>اسم الشاشة<input type="text" id="screen" placeholder="مثال: Main Stage"></label>
+        <h2 data-i18n="tp.textTitle">Text on the image</h2>
+        <label><span data-i18n="tp.event">Event name</span><input type="text" id="event" placeholder="e.g. Expo 2026" data-i18n-ph="tp.eventPh"></label>
+        <label><span data-i18n="tp.screen">Screen name</span><input type="text" id="screen" placeholder="e.g. Main Stage" data-i18n-ph="tp.screenPh"></label>
       </section>
 
       <section class="actions">
-        <button type="button" id="download" class="primary">تحميل PNG</button>
-        <button type="button" id="copyLink" class="ghost">نسخ رابط بنفس الإعدادات</button>
-        <h3>ألوان كاملة (Dead pixels / Uniformity)</h3>
+        <button type="button" id="download" class="primary" data-i18n="tp.download">Download PNG</button>
+        <button type="button" id="copyLink" class="ghost" data-i18n="tp.copyLink">Copy link with these settings</button>
+        <h3 data-i18n="tp.fields">Full color fields (dead pixels / uniformity)</h3>
         <div class="swatches" id="fields">
           <button type="button" data-color="#ff0000" style="--c:#ff0000" title="Red">R</button>
           <button type="button" data-color="#00ff00" style="--c:#00ff00" title="Green">G</button>
@@ -109,7 +111,7 @@
       <div class="canvas-wrap">
         <canvas id="canvas" dir="ltr" width="1920" height="1080"></canvas>
       </div>
-      <p class="hint">المعاينة متصغرة على قد الشاشة. الملف اللي بيتحمّل بالرزلوشن الكامل بالظبط.</p>
+      <p class="hint" data-i18n="tp.hint">The preview is scaled to fit. Downloads are exactly at full resolution.</p>
     </section>
   </main>
 

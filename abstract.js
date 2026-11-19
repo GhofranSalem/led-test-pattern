@@ -6,10 +6,10 @@
   const PRESETS = [
     ['Full HD', 1920, 1080],
     ['4K UHD', 3840, 2160],
-    ['Full HD عمودي', 1080, 1920],
-    ['2 × Full HD عرض', 3840, 1080],
-    ['3 × Full HD عرض', 5760, 1080],
-    ['4 × Full HD عرض', 7680, 1080],
+    ['preset.portrait', 1080, 1920],
+    ['preset.wide2', 3840, 1080],
+    ['preset.wide3', 5760, 1080],
+    ['preset.wide4', 7680, 1080],
     ['HD', 1280, 720],
   ];
 
@@ -63,9 +63,9 @@
   }
 
   function validate(W, H) {
-    if (!(W >= 1 && H >= 1)) return 'العرض والارتفاع لازم يكونوا أكبر من صفر.';
-    if (W > MAX_SIDE || H > MAX_SIDE) return `أقصى طول لأي ضلع في المتصفح ${MAX_SIDE} px.`;
-    if (W * H > MAX_AREA) return 'الرزلوشن أكبر من حد المتصفح.';
+    if (!(W >= 1 && H >= 1)) return I18n.t('err.zero');
+    if (W > MAX_SIDE || H > MAX_SIDE) return I18n.t('err.side', { max: MAX_SIDE });
+    if (W * H > MAX_AREA) return I18n.t('err.area');
     return '';
   }
 
@@ -159,8 +159,11 @@
   // ---------------------------------------------------------------- UI builders
   function fillPresets() {
     const sel = $('preset');
-    sel.add(new Option('— اختار —', ''));
-    PRESETS.forEach(([n, w, h]) => sel.add(new Option(`${n} — ${w}×${h}`, `${w}x${h}`)));
+    const keep = sel.value;
+    sel.innerHTML = '';
+    sel.add(new Option(I18n.t('res.pick'), ''));
+    PRESETS.forEach(([n, w, h]) => sel.add(new Option(`${I18n.t(n)} — ${w}×${h}`, `${w}x${h}`)));
+    sel.value = keep;
   }
 
   const thumbs = [];
@@ -269,7 +272,7 @@
   $('play').addEventListener('click', () => {
     if (playing) { tPaused = currentT(); playing = false; }
     else { t0 = performance.now() - tPaused * state.secs * 1000; playing = true; }
-    $('play').textContent = playing ? '⏸ إيقاف الحركة' : '▶ تشغيل الحركة';
+    $('play').textContent = I18n.t(playing ? 'ab.pause' : 'ab.play');
     drawPreview();
   });
 
@@ -295,9 +298,9 @@
     const { VW, VH } = videoSize(W, H);
     const mb = (Math.min(120e6, Math.max(8e6, VW * VH * state.fps * 0.12)) * state.secs) / 8 / 1048576;
     let info = VideoExport.supported()
-      ? `الفيديو: ${VW}×${VH} · ${state.secs} ثانية · ${state.fps}fps · حوالي ${Math.round(mb)} MB`
-      : 'تحميل الفيديو محتاج Chrome أو Edge على الكمبيوتر.';
-    if (VideoExport.supported() && (VW !== W || VH !== H)) info += ` — اتزوّد بكسل أسود لأن H.264 محتاج أرقام زوجية.`;
+      ? I18n.t('ab.videoInfo', { w: VW, h: VH, s: state.secs, fps: state.fps, mb: Math.round(mb) })
+      : I18n.t('ab.needChrome');
+    if (VideoExport.supported() && (VW !== W || VH !== H)) info += I18n.t('ab.padded');
     $('videoInfo').textContent = err ? '' : info;
 
     updateLogoUI(W, H, err);
@@ -346,7 +349,7 @@
   function updateLogoUI(W, H, err) {
     const has = !!logo;
     $('logoControls').hidden = !has;
-    $('logoDropText').textContent = has ? 'تغيير اللوجو (SVG أو PNG)' : 'اختار ملف SVG أو PNG، أو اسحبه هنا';
+    $('logoDropText').textContent = I18n.t(has ? 'ab.logoChange' : 'ab.logoPick');
     canvas.classList.toggle('has-logo', has || !!(state.text.title || state.text.sub));
     $('logoSizeOut').textContent = Math.round(state.logo.size * 100) + '%';
     document.querySelectorAll('#logoPos button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.a === state.logo.anchor)));
@@ -355,16 +358,16 @@
     let warn = '', short = '', severe = false;
     if (has && !err) {
       const r = Logo.rect(logo, state.logo, W, H);
-      $('logoPx').textContent = `هيتعرض بمقاس ${dim(r.w, r.h)}` +
-        (logo.kind === 'svg' ? ' · SVG (بيفضل حاد في أي مقاس)' : ` · الأصل ${dim(logo.natW, logo.natH)}`);
+      $('logoPx').textContent = I18n.t('ab.logoShown', { dim: dim(r.w, r.h) }) +
+        (logo.kind === 'svg' ? I18n.t('ab.logoSvgSharp') : I18n.t('ab.logoOrig', { dim: dim(logo.natW, logo.natH) }));
       const up = Logo.upscale(logo, state.logo, W, H);
       if (up > 1.05) {
         severe = up >= 2;
-        warn = `⚠ اللوجو صغير على الرزلوشن ده: الأصل ${dim(logo.natW, logo.natH)} وهيتكبّر \u2066${up.toFixed(1)}×\u2069 لـ ${dim(r.w, r.h)}، فهيبان مش حاد على الشاشة. ` +
-          `محتاج نسخة ارتفاعها \u2066${fmt(Math.ceil(r.h))} px\u2069 على الأقل، أو ملف SVG، أو صغّر الحجم.`;
-        short = `⚠ اللوجو هيتكبّر \u2066${up.toFixed(1)}×\u2069 ومش هيبقى حاد.`;
+        const x = `\u2066${up.toFixed(1)}×\u2069`;
+        warn = I18n.t('ab.logoSmall', { orig: dim(logo.natW, logo.natH), x, dim: dim(r.w, r.h), h: `\u2066${fmt(Math.ceil(r.h))} px\u2069` });
+        short = I18n.t('ab.logoSmallShort', { x });
       } else if (logo.kind === 'svg' && logo.hasRaster) {
-        warn = 'ملحوظة: ملف الـ SVG ده جواه صورة عادية (مش vector)، فالجزء ده ممكن مايبقاش حاد لو اتكبّر.';
+        warn = I18n.t('ab.logoSvgRaster');
       }
     }
     $('logoWarn').hidden = !warn;
@@ -380,12 +383,12 @@
     try {
       logo = await Logo.fromFile(file);
     } catch (e) {
-      status(e && e.message === 'type' ? 'الملف لازم يكون صورة SVG أو PNG.' : 'مقدرتش أقرا ملف اللوجو ده.', true);
+      status(I18n.t(e && e.message === 'type' ? 'ab.logoType' : 'ab.logoRead'), true);
       return;
     }
     $('logoThumb').src = logo.src;
     $('logoName').textContent = logo.name;
-    if (!Logo.store(logo)) status('اللوجو اشتغل، بس مش هيتحفظ للمرة الجاية (الملف كبير على تخزين المتصفح).');
+    if (!Logo.store(logo)) status(I18n.t('ab.logoNoStore'));
     else status('');
     changed();
   }
@@ -476,8 +479,13 @@
 
   // ---------------------------------------------------------------- event name
   function fillFonts() {
-    EventText.FONTS.forEach(f => $('textFont').add(new Option(f.name, f.id)));
-    ['logoAnim', 'textAnim'].forEach(id => Anim.TYPES.forEach(a => $(id).add(new Option(a.name, a.id))));
+    if (!$('textFont').options.length) EventText.FONTS.forEach(f => $('textFont').add(new Option(f.name, f.id)));
+    ['logoAnim', 'textAnim'].forEach(id => {
+      const sel = $(id), keep = sel.value;
+      sel.innerHTML = '';
+      Anim.TYPES.forEach(a => sel.add(new Option(I18n.t(a.name), a.id)));
+      if (keep) sel.value = keep;
+    });
   }
 
   function updateTextUI() {
@@ -522,15 +530,15 @@
 
   async function deliver(blob, name) {
     const r = await window.saveFile(blob, name);
-    if (r === 'saved') status(`اتحمّل: ${name} (${(blob.size / 1048576).toFixed(1)} MB)`);
-    else if (r === 'declined') status('التحميل اتلغى.');
-    else status('مقدرتش أحفظ الملف.', true);
+    if (r === 'saved') status(I18n.t('st.saved', { name, mb: (blob.size / 1048576).toFixed(1) }));
+    else if (r === 'declined') status(I18n.t('st.declined'));
+    else status(I18n.t('st.saveFailed'), true);
   }
 
   $('dlPng').addEventListener('click', async () => {
     const { W, H } = size();
     if (validate(W, H)) return;
-    status('بيتجهز…');
+    status(I18n.t('st.preparing'));
     const t = currentT();
     await EventText.ready(state.text);
     // let the status paint before the (possibly slow) full-res render
@@ -540,17 +548,17 @@
       try {
         renderFrame(c.getContext('2d', { alpha: false }), W, H, t, params());
       } catch (e) {
-        status('حصلت مشكلة في رسم الصورة: ' + e.message, true);
+        status(I18n.t('ab.drawErr', { msg: e.message }), true);
         return;
       }
       try {
         c.toBlob(blob => {
-          if (!blob) { status('المتصفح مقدرش يعمل الصورة دي — غالباً الرزلوشن كبير على الجهاز ده.', true); return; }
+          if (!blob) { status(I18n.t('st.tooBig'), true); return; }
           deliver(blob, `abstract_${state.style}_${W}x${H}.png`);
         }, 'image/png');
       } catch (e) {
         // a "tainted" canvas: some SVGs (e.g. with <foreignObject>) block export
-        status('المتصفح رفض يحفظ الصورة بسبب ملف اللوجو. جرّب نسخة PNG من اللوجو.', true);
+        status(I18n.t('ab.tainted'), true);
       }
     }, 30);
   });
@@ -582,16 +590,16 @@
           $('bar').style.width = (f * 100).toFixed(1) + '%';
           const el = (performance.now() - started) / 1000;
           const left = f > 0.02 ? Math.round(el / f - el) : null;
-          $('progressText').textContent = `${Math.round(f * 100)}%` + (left != null ? ` · باقي حوالي ${left} ثانية` : '');
+          $('progressText').textContent = `${Math.round(f * 100)}%` + (left != null ? I18n.t('ab.left', { n: left }) : '');
         },
       });
       const name = `abstract_${state.style}_${VW}x${VH}_${state.secs}s_${state.fps}fps.mp4`;
       await deliver(blob, name);
     } catch (e) {
-      if (e && e.name === 'AbortError') status('اتلغى.');
-      else if (e && e.message === 'size') status(`الجهاز ده مش قادر يعمل فيديو H.264 بمقاس ${VW}×${VH}. جرّب جهاز تاني أو قسّم الشاشة على أكتر من فيديو.`, true);
-      else if (e && e.message === 'unsupported') status('تحميل الفيديو محتاج Chrome أو Edge على الكمبيوتر.', true);
-      else status('حصلت مشكلة في عمل الفيديو: ' + (e && e.message ? e.message : e), true);
+      if (e && e.name === 'AbortError') status(I18n.t('ab.cancelled'));
+      else if (e && e.message === 'size') status(I18n.t('ab.vidSize', { w: VW, h: VH }), true);
+      else if (e && e.message === 'unsupported') status(I18n.t('ab.needChrome'), true);
+      else status(I18n.t('ab.vidErr', { msg: e && e.message ? e.message : e }), true);
     } finally {
       exporting = false;
       abort = null;
@@ -603,6 +611,15 @@
   $('cancel').addEventListener('click', () => { if (abort) abort.abort(); });
 
   // ---------------------------------------------------------------- init
+  I18n.apply();
+  I18n.onChange(() => {
+    fillPresets();
+    fillFonts();
+    $('play').textContent = I18n.t(playing ? 'ab.pause' : 'ab.play');
+    status('');
+    changed();
+  });
+  $('play').textContent = I18n.t('ab.pause');
   fillPresets();
   fillFonts();
   buildStyles();

@@ -2,6 +2,12 @@
 
 A browser tool that makes content for event LED screens at any resolution, including custom ones: abstract backgrounds as images and videos, plus test patterns. Everything runs in the browser, no server and no build step.
 
+## اللغة
+
+الموقع **بالإنجليزي افتراضيًا**، وفيه زرار "العربية" فوق في كل صفحة بيحوّل الموقع كله للعربي واتجاهه لليمين. المتصفح بيفتكر اختيارك، وتقدر كمان تفتح أي صفحة بـ `?lang=ar` أو `?lang=en`.
+
+كل النصوص موجودة في `i18n.js`.
+
 ## الصفحات
 
 | الصفحة | الملف | بتعمل إيه |
@@ -78,6 +84,7 @@ video.js             تصدير MP4 (WebCodecs + mp4-muxer)
 logo.js              تحميل اللوجو ومكانه وتنبيه الجودة
 text.js              اسم الإيفنت (الخطوط والمكان والحجم)
 anim.js              حركة اللوجو والنص في الفيديو
+i18n.js              النصوص بالإنجليزي والعربي، وتبديل اللغة
 test-pattern.html    صفحة صور الاختبار
 app.js / pattern.js  واجهة ورسم صور الاختبار
 save.js              حفظ الملفات (ومتوافق كمان مع صفحات claude.ai)

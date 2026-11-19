@@ -54,6 +54,26 @@
   const fmtM = mm => String(+(mm / 1000).toFixed(2));
 
   // ---------- numbers ----------
+  // Power supply sizing from the max power (full white, full brightness):
+  // I = P / (V · PF), and the supply is sized so that load ≤ 80 % of its rating.
+  const PF = 0.95;                 // LED power supplies with PFC
+  // Event supplies come in CEE (IEC 60309) connector sizes up to 125 A, then larger feeds.
+  const SIZES = [16, 32, 63, 125, 160, 200, 250, 400, 630, 800, 1000, 1250, 1600];
+  const CEE_MAX = 125;
+  const MAX_SINGLE = 63;           // above this, use three phase
+
+  function supply(watt) {
+    const i1 = watt / (230 * PF);
+    const i3 = watt / (Math.sqrt(3) * 400 * PF);
+    const pick = i => SIZES.find(b => i <= b * 0.8) || null;
+    const b1 = pick(i1), b3 = pick(i3);
+    return {
+      i1, i3, b1: b1 && b1 <= MAX_SINGLE ? b1 : null, b3,
+      cee3: b3 && b3 <= CEE_MAX ? b3 : null,
+      kva: Math.ceil(watt / 1000 / 0.8 * 1.25), // generator: kW / 0.8 PF, plus 25 % headroom
+    };
+  }
+
   function info(t, s) {
     const n = s.cabCols * s.cabRows;
     const o = { count: n, cols: s.cabCols, rows: s.cabRows, w: s.cabCols * s.cabW, h: s.cabRows * s.cabH };
@@ -64,7 +84,7 @@
       o.diag = Math.hypot(o.mmW, o.mmH);
     }
     if (s.cabKg > 0) o.kg = n * s.cabKg;
-    if (s.cabWatt > 0) o.watt = n * s.cabWatt;
+    if (s.cabWatt > 0) { o.watt = n * s.cabWatt; o.supply = supply(o.watt); }
     return o;
   }
 
@@ -237,7 +257,12 @@
         items.push([I18n.t('sum.area'), `${o.area.toFixed(2)} m²`]);
       }
       if (o.kg) items.push([I18n.t('sum.weight'), o.kg >= 1000 ? `${(o.kg / 1000).toFixed(2)} t` : `${Math.round(o.kg)} kg`]);
-      if (o.watt) items.push([I18n.t('sum.power'), `${(o.watt / 1000).toFixed(1)} / ${(o.watt / 3000).toFixed(1)} kW`]);
+      if (o.watt) {
+        items.push([I18n.t('sum.power'), `${(o.watt / 1000).toFixed(1)} / ${(o.watt / 3000).toFixed(1)} kW`]);
+        const u = o.supply;
+        items.push([I18n.t('sum.supply'), u.b3 ? I18n.t('sum.supply3', { a: u.b3 }) : '—']);
+        items.push([I18n.t('sum.generator'), `${u.kva} kVA`]);
+      }
       if (extra.ports !== undefined) items.push([I18n.t('sum.ports'), extra.ports === null ? '—' : String(extra.ports)]);
       items.forEach(([k, v]) => {
         const d = document.createElement('div');
@@ -252,7 +277,12 @@
         notes.push(['', I18n.t('scr.rounded', { w: (o.mmW / 1000).toFixed(2), h: (o.mmH / 1000).toFixed(2) })]);
       }
       if (t) notes.push(['', I18n.t('panel.size', { d: `${(o.diag / 1000).toFixed(2)} m / ${(o.diag / 25.4).toFixed(0)}"` })]);
-      if (o.watt) notes.push(['', I18n.t('sum.powerNote', { a: Math.ceil(o.watt / 230), a3: Math.ceil(o.watt / (Math.sqrt(3) * 400)) })]);
+      if (o.watt) {
+        const u = o.supply;
+        notes.push(['', I18n.t('sum.load3', { a: Math.ceil(u.i3), b: u.b3 || '—' }) + (u.cee3 ? ' ' + I18n.t('sum.cee', { a: u.cee3 }) : '')]);
+        notes.push(['', u.b1 ? I18n.t('sum.load1', { a: Math.ceil(u.i1), b: u.b1 }) : I18n.t('sum.load1No', { a: Math.ceil(u.i1) })]);
+        notes.push(['', I18n.t('sum.supplyNote')]);
+      }
       if (extra.ports === null) notes.push(['err', I18n.t('sum.portsTooBig')]);
       if (o.kg || o.watt) notes.push(['', I18n.t('sum.typical')]);
       notes.forEach(([cls, text]) => {

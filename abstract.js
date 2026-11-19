@@ -21,7 +21,7 @@
   // ---------------------------------------------------------------- state
   const state = {
     w: 1920, h: 1080,
-    cabOn: false, cabCols: 12, cabRows: 4, cabW: 128, cabH: 128,
+    cabOn: false, cabCols: 12, cabRows: 4, cabW: 192, cabH: 192, panel: 'p2.6', cabKg: 7.5, cabWatt: 180,
     style: 'blobs',
     palette: PALETTES[0].colors.slice(),
     seed: 20261119,
@@ -70,13 +70,14 @@
   }
 
   // ---------------------------------------------------------------- URL
-  const NUM = ['w', 'h', 'cabCols', 'cabRows', 'cabW', 'cabH', 'seed', 'density', 'speed', 'secs', 'fps'];
+  const NUM = ['w', 'h', 'cabCols', 'cabRows', 'cabW', 'cabH', 'cabKg', 'cabWatt', 'seed', 'density', 'speed', 'secs', 'fps'];
   const BOOL = ['cabOn', 'grain'];
 
   function toHash() {
     const p = new URLSearchParams();
     NUM.forEach(k => p.set(k, state[k]));
     BOOL.forEach(k => p.set(k, state[k] ? '1' : '0'));
+    p.set('panel', state.panel);
     p.set('style', state.style);
     p.set('pal', state.palette.map(c => c.slice(1)).join('-'));
     const L = state.logo;
@@ -92,6 +93,9 @@
     const p = new URLSearchParams(h);
     NUM.forEach(k => { if (p.has(k) && isFinite(Number(p.get(k)))) state[k] = Number(p.get(k)); });
     BOOL.forEach(k => { if (p.has(k)) state[k] = p.get(k) === '1'; });
+    if (p.has('panel')) state.panel = p.get('panel').slice(0, 24);
+    // links from before weight and power: take them from the cabinet type, if it still matches
+    if (!p.has('cabKg')) { state.cabKg = 0; state.cabWatt = 0; }
     if (p.has('style') && STYLES.some(s => s.id === p.get('style'))) state.style = p.get('style');
     if (p.has('pal')) {
       const cols = p.get('pal').split('-').filter(c => /^[0-9a-f]{6}$/i.test(c)).map(c => '#' + c.toLowerCase());
@@ -128,6 +132,9 @@
   // ---------------------------------------------------------------- form <-> state
   function stateToForm() {
     ['w', 'h', 'cabCols', 'cabRows', 'cabW', 'cabH', 'density', 'speed'].forEach(k => { $(k).value = state[k]; });
+    $('cabKg').value = state.cabKg || '';
+    $('cabWatt').value = state.cabWatt || '';
+    $('panel').value = state.panel;
     $('cabOn').checked = state.cabOn;
     $('grain').checked = state.grain;
     $('secs').value = String(state.secs);
@@ -152,6 +159,9 @@
   function formToState() {
     ['w', 'h', 'cabCols', 'cabRows', 'cabW', 'cabH', 'secs', 'fps', 'speed'].forEach(k => { state[k] = Math.floor(Number($(k).value)) || 0; });
     state.density = Number($('density').value);
+    state.cabKg = Math.max(0, parseFloat($('cabKg').value) || 0);
+    state.cabWatt = Math.max(0, parseFloat($('cabWatt').value) || 0);
+    state.panel = $('panel').value;
     state.cabOn = $('cabOn').checked;
     state.grain = $('grain').checked;
   }
@@ -295,6 +305,7 @@
     if (state.cabOn) { $('w').value = W; $('h').value = H; }
 
     const err = validate(W, H);
+    cab.render(state, { error: err });
     $('warn').hidden = !err;
     $('warn').textContent = err;
     $('warn').classList.toggle('err', !!err);
@@ -324,7 +335,7 @@
     try { history.replaceState(null, '', '#' + toHash()); } catch { /* ignore */ }
     $('ssOpen').href = 'screensaver.html#' + toHash();
     $('otherTab').href = 'test-pattern.html#' + new URLSearchParams(state.cabOn
-      ? { cabOn: 1, cabCols: state.cabCols, cabRows: state.cabRows, cabW: state.cabW, cabH: state.cabH }
+      ? { cabOn: 1, cabCols: state.cabCols, cabRows: state.cabRows, cabW: state.cabW, cabH: state.cabH, panel: state.panel, cabKg: state.cabKg, cabWatt: state.cabWatt }
       : { w: state.w, h: state.h, cabOn: 0 }).toString();
 
     if (!err) { sizePreview(); drawPreview(); }
@@ -334,7 +345,7 @@
 
   $('controls').addEventListener('input', e => {
     const id = e.target.id;
-    if (id.startsWith('logo') || id.startsWith('text')) return; // handled by their own sections
+    if (id.startsWith('logo') || id.startsWith('text') || e.target.closest('#cabForm')) return; // handled by their own sections
     if (e.target.name === 'kind') {
       // switching category picks that category's first style
       if (kindOf(state.style) !== e.target.value) state.style = STYLES.find(s => s.kind === e.target.value).id;
@@ -575,7 +586,7 @@
       try {
         c.toBlob(blob => {
           if (!blob) { status(I18n.t('st.tooBig'), true); return; }
-          deliver(blob, `abstract_${state.style}_${W}x${H}.png`);
+          deliver(blob, ['abstract', state.style, Cabinets.fileTag(cab.current(), state), `${W}x${H}`].filter(Boolean).join('_') + '.png');
         }, 'image/png');
       } catch (e) {
         // a "tainted" canvas: some SVGs (e.g. with <foreignObject>) block export
@@ -614,7 +625,7 @@
           $('progressText').textContent = `${Math.round(f * 100)}%` + (left != null ? I18n.t('ab.left', { n: left }) : '');
         },
       });
-      const name = `abstract_${state.style}_${VW}x${VH}_${state.secs}s_${state.fps}fps.mp4`;
+      const name = ['abstract', state.style, Cabinets.fileTag(cab.current(), state), `${VW}x${VH}`, `${state.secs}s`, `${state.fps}fps`].filter(Boolean).join('_') + '.mp4';
       await deliver(blob, name);
     } catch (e) {
       if (e && e.name === 'AbortError') status(I18n.t('ab.cancelled'));
@@ -653,9 +664,12 @@
   });
 
   // ---------------------------------------------------------------- init
+  const cab = Cabinets.bind({ onChange: () => { formToState(); changed(); } });
   I18n.apply();
+  cab.fill();
   I18n.onChange(() => {
     fillPresets();
+    cab.fill();
     fillFonts();
     $('play').textContent = I18n.t(playing ? 'ab.pause' : 'ab.play');
     status('');
@@ -668,6 +682,12 @@
   buildPalettes();
   if (location.hash.length > 1) fromHash(location.hash.slice(1));
   stateToForm();
+  cab.sync();
+  if (!state.cabKg) {
+    const t = cab.current();
+    if (t) { $('cabKg').value = t.kg; $('cabWatt').value = t.watt; }
+  }
+  formToState();
   changed();
   restoreLogo();
   EventText.ready(state.text).then(() => changed());

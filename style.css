@@ -181,3 +181,4 @@ canvas {
 }
 
 [hidden] { display: none !important; }
+.row.btns input { margin-top: 0; min-width: 0; }

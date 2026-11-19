@@ -116,8 +116,8 @@
 
   $('savePreset').addEventListener('click', () => {
     const s = readState();
-    const name = prompt('اسم الـ preset (مثلاً: شاشة المسرح الرئيسي):', s.screen || `${s.w}×${s.h}`);
-    if (!name) return;
+    const name = $('presetName').value.trim() || s.screen || `${s.w}×${s.h}`;
+    $('presetName').value = '';
     const list = loadSaved();
     list.push({ name, w: s.w, h: s.h, state: s });
     if (!storeSaved(list)) { status('مقدرتش أحفظ — المتصفح مانع التخزين.', true); return; }
@@ -234,13 +234,13 @@
       await navigator.clipboard.writeText(url);
       status('الرابط اتنسخ.');
     } catch {
-      prompt('انسخ الرابط:', url);
+      status('انسخ الرابط: ' + url);
     }
   });
 
   // ---------- wiring ----------
   document.getElementById('controls').addEventListener('input', e => {
-    if (e.target.id === 'preset') return;
+    if (e.target.id === 'preset' || e.target.id === 'presetName') return;
     if (e.target.id === 'w' || e.target.id === 'h') { $('preset').value = ''; $('deletePreset').hidden = true; }
     update();
   });

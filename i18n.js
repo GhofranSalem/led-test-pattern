@@ -70,7 +70,7 @@
     'home.toolsSub': ['Pick the tool you need. The resolution carries over between tools.', 'اختار الأداة اللي محتاجها. الرزلوشن بيتنقل معاك من أداة للتانية.'],
     'home.abTitle': ['Abstract backgrounds', 'خلفيات Abstract'],
     'home.abDesc': ["Backgrounds drawn at the screen's own resolution, so they stay sharp at any size.", 'خلفيات بتترسم على رزلوشن الشاشة نفسه، فبتفضل حادة مهما كان المقاس.'],
-    'home.abF1': ['12 animated and 6 static styles, 8 palettes, every color editable', '12 ستايل متحرك و 6 ثابتة، و 8 باليتات ألوان تقدر تعدّل فيها'],
+    'home.abF1': ['16 animated and 6 static styles, 8 palettes, every color editable', '16 ستايل متحرك و 6 ثابتة، و 8 باليتات ألوان تقدر تعدّل فيها'],
     'home.abF2': ['A PNG image, or an MP4 video that loops seamlessly', 'صورة PNG، أو فيديو MP4 بيلف loop من غير قطع'],
     'home.abF3': ['Company logo and event name, with motion in video', 'لوجو الشركة واسم الإيفنت، ومعاهم حركة في الفيديو'],
     'home.open': ['Open tool', 'افتح الأداة'],

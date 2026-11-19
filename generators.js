@@ -503,6 +503,154 @@
     }
   }
 
+  // ================================================================ falling lines
+  // Each streak's position is frac(start + t * k) with a whole number k, so
+  // every streak is back where it started at the end of the clip: seamless.
+  const frac = x => ((x % 1) + 1) % 1;
+
+  // ---------------------------------------------------------------- waterfall
+  function waterfall(ctx, W, H, t, p) {
+    const { bg, cols, r } = prep(p);
+    const m = Math.min(W, H);
+    const g0 = ctx.createLinearGradient(0, 0, 0, H);
+    g0.addColorStop(0, rgba(bg, 1));
+    g0.addColorStop(1, rgba(mix(bg, cols[0], 0.3), 1));
+    ctx.fillStyle = g0;
+    ctx.fillRect(0, 0, W, H);
+    const n = Math.round((60 + p.density * 220) * (W / m));      // lines across the width
+    const lw = Math.max(1, m / 700);
+    ctx.lineCap = 'round';
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < n; i++) {
+      const x0 = (i + r()) / n * W;
+      const sway = (0.004 + r() * 0.01) * m, sk = 1 + Math.floor(r() * 2), sph = r() * TAU;
+      const c = cols[i % cols.length];
+      const drops = 1 + Math.floor(r() * 3);
+      const k = p.speed * (1 + Math.floor(r() * 3));               // falls 1–3 screens per cycle
+      const len = H * (0.25 + r() * 0.5);
+      const w = lw * (0.6 + r() * 1.4);
+      for (let d = 0; d < drops; d++) {
+        const head = frac(r() + t * k) * (H + len);                 // 0..H+len
+        const y1 = head, y0 = head - len;
+        const x = x0 + sway * Math.sin(TAU * t * sk + sph + head / H * 2);
+        const g = ctx.createLinearGradient(0, y0, 0, y1);
+        g.addColorStop(0, rgba(c, 0));
+        g.addColorStop(0.85, rgba(c, 0.55));
+        g.addColorStop(1, rgba(mix(c, [255, 255, 255], 0.6), 0.95));
+        ctx.strokeStyle = g;
+        ctx.lineWidth = w;
+        ctx.beginPath();
+        ctx.moveTo(x, Math.max(-len, y0));
+        ctx.lineTo(x, Math.min(H + len, y1));
+        ctx.stroke();
+      }
+    }
+    // mist where the water lands
+    const mist = ctx.createLinearGradient(0, H * 0.75, 0, H);
+    mist.addColorStop(0, rgba(cols[1 % cols.length], 0));
+    mist.addColorStop(1, rgba(cols[1 % cols.length], 0.35));
+    ctx.fillStyle = mist;
+    ctx.fillRect(0, H * 0.75, W, H * 0.25);
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  // ---------------------------------------------------------------- light rain
+  function rain(ctx, W, H, t, p) {
+    const { bg, cols, r } = prep(p);
+    const m = Math.min(W, H);
+    ctx.fillStyle = rgba(bg, 1);
+    ctx.fillRect(0, 0, W, H);
+    const slant = (r() - 0.5) * 0.35;                               // gentle wind
+    const area = (W / m) * (H / m);
+    const n = Math.round((150 + p.density * 600) * Math.sqrt(area));
+    ctx.lineCap = 'round';
+    for (let i = 0; i < n; i++) {
+      const depth = r();                                            // 0 far .. 1 near
+      const c = cols[i % cols.length];
+      const k = p.speed * (1 + Math.round(depth * 3));              // near drops fall faster
+      const len = m * (0.03 + depth * 0.12);
+      const travel = H + len;
+      const head = frac(r() + t * k) * travel;
+      const x = r() * (W + Math.abs(slant) * H) - (slant > 0 ? slant * H : 0) + slant * head;
+      ctx.strokeStyle = rgba(mix(c, [255, 255, 255], 0.35), 0.15 + depth * 0.6);
+      ctx.lineWidth = Math.max(1, m / 1400 * (1 + depth * 3));
+      ctx.beginPath();
+      ctx.moveTo(x - slant * len, head - len);
+      ctx.lineTo(x, head);
+      ctx.stroke();
+    }
+  }
+
+  // ---------------------------------------------------------------- code rain
+  const GLYPHS = '0123456789ABCDEF<>/{}[]=+*#';
+  function coderain(ctx, W, H, t, p) {
+    const { bg, cols, r } = prep(p);
+    const m = Math.min(W, H);
+    ctx.fillStyle = rgba(bg, 1);
+    ctx.fillRect(0, 0, W, H);
+    const cell = m / (22 + p.density * 30);
+    const colsN = Math.ceil(W / cell), rows = Math.ceil(H / cell);
+    ctx.font = `600 ${cell * 0.82}px "Geist Mono", ui-monospace, Menlo, Consolas, monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (let c = 0; c < colsN; c++) {
+      const col = cols[c % cols.length];
+      const trail = 6 + Math.floor(r() * 18);
+      const k = p.speed * (1 + Math.floor(r() * 3));
+      const head = Math.floor(frac(r() + t * k) * (rows + trail));
+      const seed = Math.floor(r() * 1e6);
+      const flick = 1 + Math.floor(r() * 4);
+      for (let j = 0; j < trail; j++) {
+        const row = head - j;
+        if (row < 0 || row >= rows) continue;
+        const a = j === 0 ? 1 : (1 - j / trail) * 0.75;
+        // glyphs change a whole number of times per cycle (loop-safe)
+        const g = GLYPHS[(seed + row * 7 + Math.floor(frac(t * flick + row * 0.13) * 8) * 13) % GLYPHS.length];
+        ctx.fillStyle = j === 0 ? rgba(mix(col, [255, 255, 255], 0.75), 1) : rgba(col, a);
+        ctx.fillText(g, c * cell + cell / 2, row * cell + cell / 2);
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------- meteor shower
+  function meteors(ctx, W, H, t, p) {
+    const { bg, cols, r } = prep(p);
+    const m = Math.min(W, H);
+    const g0 = ctx.createLinearGradient(0, 0, W, H);
+    g0.addColorStop(0, rgba(mix(bg, cols[0], 0.2), 1));
+    g0.addColorStop(1, rgba(bg, 1));
+    ctx.fillStyle = g0;
+    ctx.fillRect(0, 0, W, H);
+    const ang = Math.PI * (0.62 + r() * 0.12);                    // falling down-left / down-right
+    const dir = r() < 0.5 ? 1 : -1;
+    const ux = Math.cos(ang) * dir, uy = Math.sin(ang);
+    const span = Math.hypot(W, H);
+    const n = Math.round(18 + p.density * 60);
+    ctx.lineCap = 'round';
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < n; i++) {
+      const c = cols[i % cols.length];
+      const k = p.speed * (1 + Math.floor(r() * 2));
+      const len = span * (0.08 + r() * 0.2);
+      // start above the screen, shifted upwind so every meteor crosses it
+      const sx = r() * (W + span * 0.6) - (ux > 0 ? span * 0.6 : 0);
+      const sy = -r() * H * 0.5;
+      const d = frac(r() + t * k) * (span + len);
+      const hx = sx + ux * d, hy = sy + uy * d;
+      const tx = hx - ux * len, ty = hy - uy * len;
+      const g = ctx.createLinearGradient(tx, ty, hx, hy);
+      g.addColorStop(0, rgba(c, 0));
+      g.addColorStop(1, rgba(mix(c, [255, 255, 255], 0.6), 0.95));
+      ctx.strokeStyle = g;
+      ctx.lineWidth = Math.max(1, m / 500 * (0.6 + r()));
+      ctx.beginPath();
+      ctx.moveTo(tx, ty);
+      ctx.lineTo(hx, hy);
+      ctx.stroke();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
   // ================================================================ static styles (ignore t)
 
   function solid(ctx, W, H, t, p) {
@@ -662,6 +810,10 @@
     { id: 'starfield', name: 'Starfield', draw: starfield, kind: 'animated' },
     { id: 'retrogrid', name: 'Retro Grid', draw: retrogrid, kind: 'animated' },
     { id: 'stripes', name: 'Light Stripes', draw: stripes, kind: 'animated' },
+    { id: 'waterfall', name: 'Waterfall', draw: waterfall, kind: 'animated' },
+    { id: 'rain', name: 'Light Rain', draw: rain, kind: 'animated' },
+    { id: 'coderain', name: 'Code Rain', draw: coderain, kind: 'animated' },
+    { id: 'meteors', name: 'Meteor Shower', draw: meteors, kind: 'animated' },
     { id: 'lowpoly', name: 'Low Poly', draw: lowpoly, kind: 'animated' },
     { id: 'gradient', name: 'Smooth Gradient', draw: gradient, kind: 'animated' },
     { id: 'mesh', name: 'Mesh Gradient', draw: mesh, kind: 'static' },

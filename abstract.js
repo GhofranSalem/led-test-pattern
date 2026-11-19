@@ -30,8 +30,8 @@
     speed: 1,
     secs: 30,
     fps: 30,
-    logo: { size: 0.25, anchor: 'br', margin: 0.05, cx: 0.5, cy: 0.5, opacity: 1, anim: 'none' },
-    text: { title: '', sub: '', font: 'Cairo', weight: 700, color: '#ffffff', size: 0.12, anchor: 'c', margin: 0.05, cx: 0.5, cy: 0.5, shadow: true, anim: 'none' },
+    logo: { size: 0.25, anchor: 'br', margin: 0.05, cx: 0.5, cy: 0.5, opacity: 1, anim: 'none', blur: 0, dim: 0 },
+    text: { title: '', sub: '', font: 'Cairo', weight: 700, color: '#ffffff', size: 0.12, anchor: 'c', margin: 0.05, cx: 0.5, cy: 0.5, shadow: true, anim: 'none', blur: 0, dim: 0 },
   };
   let logo = null; // loaded logo image (see logo.js)
 
@@ -52,13 +52,19 @@
     if (logo) {
       const r = Logo.rect(logo, state.logo, W, H);
       const st = Anim.at(animated ? state.logo.anim : 'none', t, state.secs, 0);
-      Anim.apply(c, st, r.x + r.w / 2, r.y + r.h / 2, H, () => Logo.draw(c, logo, state.logo, W, H));
+      Anim.apply(c, st, r.x + r.w / 2, r.y + r.h / 2, H, () => {
+        Backdrop.draw(c, r, state.logo, W, H);
+        Logo.draw(c, logo, state.logo, W, H);
+      });
     }
     const L = EventText.layout(state.text, W, H);
     if (L) {
       // the name follows the logo by a beat when both move
       const st = Anim.at(animated ? state.text.anim : 'none', t, state.secs, logo && state.logo.anim !== 'none' ? 0.3 : 0);
-      Anim.apply(c, st, L.x + L.w / 2, L.y + L.h / 2, H, () => EventText.draw(c, state.text, W, H));
+      Anim.apply(c, st, L.x + L.w / 2, L.y + L.h / 2, H, () => {
+        Backdrop.draw(c, L, state.text, W, H);
+        EventText.draw(c, state.text, W, H);
+      });
     }
   }
 
@@ -81,11 +87,11 @@
     p.set('style', state.style);
     p.set('pal', state.palette.map(c => c.slice(1)).join('-'));
     const L = state.logo;
-    p.set('logo', [L.size, L.anchor, L.margin, +L.cx.toFixed(4), +L.cy.toFixed(4), L.opacity, L.anim].join('~'));
+    p.set('logo', [L.size, L.anchor, L.margin, +L.cx.toFixed(4), +L.cy.toFixed(4), L.opacity, L.anim, L.blur, L.dim].join('~'));
     const T = state.text;
     if (T.title) p.set('title', T.title);
     if (T.sub) p.set('sub', T.sub);
-    p.set('txt', [T.font, T.weight, T.color.slice(1), T.size, T.anchor, T.margin, +T.cx.toFixed(4), +T.cy.toFixed(4), T.shadow ? 1 : 0, T.anim].join('~'));
+    p.set('txt', [T.font, T.weight, T.color.slice(1), T.size, T.anchor, T.margin, +T.cx.toFixed(4), +T.cy.toFixed(4), T.shadow ? 1 : 0, T.anim, T.blur, T.dim].join('~'));
     return p.toString();
   }
 
@@ -102,7 +108,7 @@
       if (cols.length === 5) state.palette = cols;
     }
     if (p.has('logo')) {
-      const [size, anchor, margin, cx, cy, opacity, anim] = p.get('logo').split('~');
+      const [size, anchor, margin, cx, cy, opacity, anim, blur, dim] = p.get('logo').split('~');
       const L = state.logo, n = (v, lo, hi, d) => (isFinite(+v) ? Math.min(hi, Math.max(lo, +v)) : d);
       L.size = n(size, 0.03, 1, L.size);
       if (/^(tl|t|tr|l|c|r|bl|b|br|custom)$/.test(anchor)) L.anchor = anchor;
@@ -110,12 +116,13 @@
       L.cx = n(cx, 0, 1, L.cx); L.cy = n(cy, 0, 1, L.cy);
       L.opacity = n(opacity, 0.1, 1, L.opacity);
       if (Anim.TYPES.some(a => a.id === anim)) L.anim = anim;
+      L.blur = n(blur, 0, 1, 0); L.dim = n(dim, 0, 1, 0);
     }
     const T = state.text;
     if (p.has('title')) T.title = p.get('title').slice(0, 200);
     if (p.has('sub')) T.sub = p.get('sub').slice(0, 200);
     if (p.has('txt')) {
-      const [font, weight, color, sz, anchor, margin, cx, cy, shadow, anim] = p.get('txt').split('~');
+      const [font, weight, color, sz, anchor, margin, cx, cy, shadow, anim, blur, dim] = p.get('txt').split('~');
       const n = (v, lo, hi, d) => (isFinite(+v) && v !== '' ? Math.min(hi, Math.max(lo, +v)) : d);
       if (EventText.FONTS.some(f => f.id === font)) T.font = font;
       if (['400', '700', '900'].includes(weight)) T.weight = Number(weight);
@@ -126,6 +133,7 @@
       T.cx = n(cx, 0, 1, T.cx); T.cy = n(cy, 0, 1, T.cy);
       T.shadow = shadow !== '0';
       if (Anim.TYPES.some(a => a.id === anim)) T.anim = anim;
+      T.blur = n(blur, 0, 1, 0); T.dim = n(dim, 0, 1, 0);
     }
   }
 
@@ -143,6 +151,8 @@
     $('logoSize').value = state.logo.size;
     $('logoMargin').value = state.logo.margin;
     $('logoOpacity').value = state.logo.opacity;
+    $('logoBlur').value = state.logo.blur; $('logoDim').value = state.logo.dim;
+    $('textBlur').value = state.text.blur; $('textDim').value = state.text.dim;
     const T = state.text;
     $('textTitle').value = T.title;
     $('textSub').value = T.sub;
@@ -447,6 +457,8 @@
   $('logoSize').addEventListener('input', e => { state.logo.size = Number(e.target.value); changed(); });
   $('logoMargin').addEventListener('input', e => { state.logo.margin = Number(e.target.value); changed(); });
   $('logoOpacity').addEventListener('input', e => { state.logo.opacity = Number(e.target.value); changed(); });
+  $('logoBlur').addEventListener('input', e => { state.logo.blur = Number(e.target.value); changed(); });
+  $('logoDim').addEventListener('input', e => { state.logo.dim = Number(e.target.value); changed(); });
   $('logoPos').addEventListener('click', e => {
     const b = e.target.closest('button[data-a]');
     if (!b) return;
@@ -542,6 +554,8 @@
   $('textSize').addEventListener('input', e => { state.text.size = Number(e.target.value); changed(); });
   $('textMargin').addEventListener('input', e => { state.text.margin = Number(e.target.value); changed(); });
   $('textShadow').addEventListener('input', e => { state.text.shadow = e.target.checked; changed(); });
+  $('textBlur').addEventListener('input', e => { state.text.blur = Number(e.target.value); changed(); });
+  $('textDim').addEventListener('input', e => { state.text.dim = Number(e.target.value); changed(); });
   $('textAnim').addEventListener('input', e => { state.text.anim = e.target.value; changed(); });
   $('logoAnim').addEventListener('input', e => { state.logo.anim = e.target.value; changed(); });
   $('textPos').addEventListener('click', e => {

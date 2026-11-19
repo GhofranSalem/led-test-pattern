@@ -14,6 +14,14 @@
     });
   }
 
+  // style counts in the card text, from the real list (I18n.apply fills them in)
+  const f1 = document.getElementById('abF1');
+  if (f1 && window.Abstract) {
+    const n = k => window.Abstract.STYLES.filter(s => s.kind === k).length;
+    f1.dataset.i18nVars = JSON.stringify({ a: n('animated'), s: n('static') });
+    I18n.apply();
+  }
+
   // abstract card: slowly cycles through the styles
   const ab = document.getElementById('prevAbstract');
   if (!ab || !window.Abstract) return;
@@ -22,7 +30,7 @@
   const looks = [
     ['waterfall', 'ocean'], ['waves', 'ocean'], ['aurora', 'aurora'], ['coderain', 'aurora'], ['retrogrid', 'neon'], ['blobs', 'neon'],
     ['constellation', 'ocean'], ['flow', 'aurora'], ['starfield', 'pastel'], ['bokeh', 'sunset'],
-    ['ripples', 'corporate'], ['stripes', 'gold'],
+    ['ripples', 'corporate'], ['stripes', 'gold'], ['stagelights', 'neon'], ['arabesque', 'gold'], ['silk', 'ocean'],
   ].filter(([s]) => STYLES.some(x => x.id === s));
   const SECS = 6;
   const start = performance.now();

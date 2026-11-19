@@ -772,6 +772,364 @@
     ctx.restore();
   }
 
+  // closed path through points
+  function poly(ctx, pts) {
+    ctx.beginPath();
+    pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+    ctx.closePath();
+  }
+  const clamp01 = v => Math.min(1, Math.max(0, v));
+
+  // dark backdrop with a soft lift of the first accent colour toward the bottom
+  function backdrop(ctx, W, H, bg, c, lift) {
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, rgba(bg, 1));
+    g.addColorStop(1, rgba(mix(bg, c, lift), 1));
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  function hexgrid(ctx, W, H, t, p) {
+    const { bg, cols, r } = prep(p);
+    const m = Math.min(W, H);
+    backdrop(ctx, W, H, bg, cols[0], 0.25);
+    const s = m / (5 + p.density * 12);           // hexagon radius
+    const hw = Math.sqrt(3) * s;
+    const gx = 0.2 + r() * 0.6, gy = 0.2 + r() * 0.6; // where the glow sits
+    ctx.lineWidth = Math.max(1, m / 700);
+    for (let row = -1, y = -s; y < H + s * 2; row++, y += s * 1.5) {
+      for (let x = (row & 1) * hw / 2 - hw; x < W + hw; x += hw) {
+        const d = Math.hypot((x - gx * W) / m, (y - gy * H) / m);
+        const f = clamp01(1 - d / 1.1), v = r();
+        const hex = [];
+        for (let k = 0; k < 6; k++) hex.push([x + Math.sin(k * TAU / 6) * s * 0.93, y + Math.cos(k * TAU / 6) * s * 0.93]);
+        poly(ctx, hex);
+        ctx.fillStyle = rgba(along(cols, v), (v > 0.75 ? 0.55 : 0.12) * f * f);
+        ctx.fill();
+        ctx.strokeStyle = rgba(along(cols, f), 0.1 + 0.55 * f);
+        ctx.stroke();
+      }
+    }
+  }
+
+  function rays(ctx, W, H, t, p) {
+    const { bg, cols, r } = prep(p);
+    const D = Math.hypot(W, H);
+    const cx = W * (0.5 + (r() - 0.5) * 0.3), cy = H * (0.5 + (r() - 0.5) * 0.3);
+    ctx.fillStyle = rgba(bg, 1);
+    ctx.fillRect(0, 0, W, H);
+    const n = 2 * (8 + Math.round(p.density * 14)), a0 = r() * TAU;
+    ctx.globalCompositeOperation = 'screen';
+    for (let i = 0; i < n; i += 2) {
+      const a = a0 + i * TAU / n, w = TAU / n;
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, D);
+      const c = along(cols, (i / n * 2) % 1);
+      g.addColorStop(0, rgba(c, 0.55));
+      g.addColorStop(0.6, rgba(c, 0.12));
+      g.addColorStop(1, rgba(c, 0));
+      ctx.fillStyle = g;
+      poly(ctx, [[cx, cy], [cx + Math.cos(a) * D, cy + Math.sin(a) * D], [cx + Math.cos(a + w) * D, cy + Math.sin(a + w) * D]]);
+      ctx.fill();
+    }
+    const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, D * 0.3);
+    glow.addColorStop(0, rgba(mix(cols[0], [255, 255, 255], 0.5), 0.9));
+    glow.addColorStop(1, rgba(cols[0], 0));
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  function beams(ctx, W, H, t, p) {
+    const { bg, cols, r } = prep(p);
+    const m = Math.min(W, H), D = Math.hypot(W, H);
+    backdrop(ctx, W, H, bg, cols[0], 0.2);
+    const ang = -Math.PI / 4 + (r() - 0.5) * 0.5;
+    const ux = Math.cos(ang), uy = Math.sin(ang), nx = -uy, ny = ux;
+    const n = 6 + Math.round(p.density * 12);
+    ctx.globalCompositeOperation = 'screen';
+    for (let i = 0; i < n; i++) {
+      const off = (r() - 0.5) * D, w = m * (0.015 + r() * r() * 0.3), a = 0.2 + r() * 0.5;
+      const c = cols[i % cols.length];
+      const ox = W / 2 + nx * off, oy = H / 2 + ny * off;
+      const g = ctx.createLinearGradient(ox - nx * w, oy - ny * w, ox + nx * w, oy + ny * w);
+      g.addColorStop(0, rgba(c, 0));
+      g.addColorStop(0.5, rgba(mix(c, [255, 255, 255], 0.2), a));
+      g.addColorStop(1, rgba(c, 0));
+      ctx.fillStyle = g;
+      poly(ctx, [[ox - ux * D - nx * w, oy - uy * D - ny * w], [ox + ux * D - nx * w, oy + uy * D - ny * w],
+        [ox + ux * D + nx * w, oy + uy * D + ny * w], [ox - ux * D + nx * w, oy - uy * D + ny * w]]);
+      ctx.fill();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  function circuit(ctx, W, H, t, p) {
+    const { bg, cols, r } = prep(p);
+    const m = Math.min(W, H);
+    backdrop(ctx, W, H, bg, cols[0], 0.15);
+    const g = m / (18 + p.density * 26);
+    const gw = Math.ceil(W / g), gh = Math.ceil(H / g);
+    const n = Math.round(gw * gh * 0.06);
+    const dirs = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]];
+    const lw = Math.max(1, m / 650);
+    const paths = [];
+    for (let i = 0; i < n; i++) {
+      let x = Math.floor(r() * gw), y = Math.floor(r() * gh), d = Math.floor(r() * 4) * 2;
+      const pts = [[x, y]];
+      const segs = 2 + Math.floor(r() * 4);
+      for (let s = 0; s < segs; s++) {
+        const len = 1 + Math.floor(r() * 5);
+        x += dirs[d][0] * len; y += dirs[d][1] * len;
+        pts.push([x, y]);
+        d = (d + (r() < 0.5 ? 1 : 7)) % 8;          // turn 45° left or right
+      }
+      paths.push({ pts: pts.map(([a, b]) => [a * g, b * g]), c: along(cols, r()), node: r() < 0.7 });
+    }
+    // soft glow pass, then the traces and their end pads
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    [[lw * 5, 0.08], [lw, 0.85]].forEach(([w, a]) => {
+      ctx.lineWidth = w;
+      paths.forEach(q => {
+        ctx.strokeStyle = rgba(q.c, a);
+        ctx.beginPath();
+        q.pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+        ctx.stroke();
+      });
+    });
+    paths.forEach(q => {
+      [q.pts[0], q.pts[q.pts.length - 1]].forEach(([x, y], k) => {
+        ctx.beginPath();
+        ctx.arc(x, y, lw * (k || !q.node ? 2.2 : 3.2), 0, TAU);
+        ctx.fillStyle = rgba(bg, 1); ctx.fill();
+        ctx.lineWidth = lw; ctx.strokeStyle = rgba(q.c, 0.95); ctx.stroke();
+      });
+    });
+  }
+
+  function wavelines(ctx, W, H, t, p) {
+    const { bg, cols, r } = prep(p);
+    const m = Math.min(W, H);
+    backdrop(ctx, W, H, bg, cols[0], 0.2);
+    const n = 30 + Math.round(p.density * 70);
+    const A = 0.1 + r() * 0.1, k1 = 0.6 + r() * 0.9, ph1 = r() * TAU, k2 = 0.3 + r() * 0.5, ph2 = r() * TAU, tw = 1 + r() * 2;
+    const steps = 160;
+    ctx.globalCompositeOperation = 'screen';
+    ctx.lineWidth = Math.max(1, m / 900);
+    for (let i = 0; i < n; i++) {
+      const f = i / (n - 1);
+      ctx.strokeStyle = rgba(along(cols, f), 0.25 + 0.45 * Math.sin(f * Math.PI));
+      ctx.beginPath();
+      for (let s = 0; s <= steps; s++) {
+        const u = s / steps;
+        const y = H * (0.5 + A * Math.sin(TAU * k1 * u + ph1 + f * tw) + (f - 0.5) * 0.35 * Math.sin(TAU * k2 * u + ph2));
+        s ? ctx.lineTo(u * W, y) : ctx.moveTo(u * W, y);
+      }
+      ctx.stroke();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  function glass(ctx, W, H, t, p) {
+    const { bg, cols, r } = prep(p);
+    const m = Math.min(W, H), D = Math.hypot(W, H);
+    ctx.fillStyle = rgba(bg, 1);
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'screen';
+    cols.forEach(c => {
+      const x = r() * W, y = r() * H, rad = D * (0.2 + r() * 0.2);
+      const g = ctx.createRadialGradient(x, y, 0, x, y, rad);
+      g.addColorStop(0, rgba(c, 0.8)); g.addColorStop(1, rgba(c, 0));
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    });
+    ctx.globalCompositeOperation = 'source-over';
+    const n = 4 + Math.round(p.density * 6);
+    for (let i = 0; i < n; i++) {
+      const w = m * (0.25 + r() * 0.6), h = m * (0.2 + r() * 0.5);
+      const x = r() * W, y = r() * H, rot = (r() - 0.5) * 0.5, rad = m * 0.03;
+      ctx.save();
+      ctx.translate(x, y); ctx.rotate(rot);
+      ctx.beginPath();
+      ctx.moveTo(-w / 2 + rad, -h / 2);
+      ctx.arcTo(w / 2, -h / 2, w / 2, h / 2, rad); ctx.arcTo(w / 2, h / 2, -w / 2, h / 2, rad);
+      ctx.arcTo(-w / 2, h / 2, -w / 2, -h / 2, rad); ctx.arcTo(-w / 2, -h / 2, w / 2, -h / 2, rad);
+      ctx.closePath();
+      const g = ctx.createLinearGradient(-w / 2, -h / 2, w / 2, h / 2);
+      g.addColorStop(0, 'rgba(255,255,255,0.16)'); g.addColorStop(0.5, 'rgba(255,255,255,0.04)'); g.addColorStop(1, 'rgba(255,255,255,0.1)');
+      ctx.fillStyle = g; ctx.fill();
+      ctx.lineWidth = Math.max(1, m / 600);
+      ctx.strokeStyle = 'rgba(255,255,255,0.28)'; ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  function dotmatrix(ctx, W, H, t, p) {
+    const { bg, cols, r } = prep(p);
+    const m = Math.min(W, H);
+    ctx.fillStyle = rgba(bg, 1);
+    ctx.fillRect(0, 0, W, H);
+    const g = m / (22 + p.density * 40);
+    const lights = [0, 1, 2].map(() => ({ x: r(), y: r(), s: 0.35 + r() * 0.45 }));
+    for (let y = g / 2; y < H; y += g) {
+      for (let x = g / 2; x < W; x += g) {
+        let f = 0;
+        lights.forEach(L => { f += Math.exp(-(Math.pow((x / W - L.x) * W / m, 2) + Math.pow((y / H - L.y) * H / m, 2)) / (L.s * L.s * 0.3)); });
+        f = clamp01(f);
+        ctx.fillStyle = rgba(along(cols, f), 0.12 + 0.88 * f);
+        ctx.beginPath();
+        ctx.arc(x, y, g * (0.12 + 0.24 * f), 0, TAU);
+        ctx.fill();
+      }
+    }
+  }
+
+  // 8-pointed star lattice (khatam), common in Islamic geometric patterns
+  function arabesque(ctx, W, H, t, p) {
+    const { bg, cols, r } = prep(p);
+    const m = Math.min(W, H);
+    backdrop(ctx, W, H, bg, cols[0], 0.3);
+    const s = m / (2.5 + p.density * 5);
+    const R = s * 0.5, Ri = R * Math.cos(Math.PI / 4) / Math.cos(Math.PI / 8);
+    const gx = r(), gy = r();
+    const lw = Math.max(1, m / 450);
+    const star = (cx, cy, rad, rin) => {
+      const pts = [];
+      for (let k = 0; k < 16; k++) {
+        const a = k * Math.PI / 8 + Math.PI / 8, q = k % 2 ? rin : rad;
+        pts.push([cx + Math.cos(a) * q, cy + Math.sin(a) * q]);
+      }
+      return pts;
+    };
+    const ox = (W / 2) % s, oy = (H / 2) % s;
+    for (let y = oy - s; y < H + s; y += s) {
+      for (let x = ox - s; x < W + s; x += s) {
+        const f = clamp01(1 - Math.hypot((x - gx * W) / m, (y - gy * H) / m) / 1.3);
+        const c = along(cols, f);
+        // big star on the lattice point, small star in the cell centre
+        [[x, y, R, Ri, 0.22], [x + s / 2, y + s / 2, R * 0.42, R * 0.42 * 0.7654, 0.12]].forEach(([cx, cy, a, b, fa]) => {
+          poly(ctx, star(cx, cy, a, b));
+          ctx.fillStyle = rgba(c, fa * (0.4 + f));
+          ctx.fill();
+          ctx.lineWidth = lw;
+          ctx.strokeStyle = rgba(mix(c, [255, 255, 255], 0.15), 0.35 + 0.6 * f);
+          ctx.stroke();
+        });
+        // straps joining neighbouring stars
+        ctx.strokeStyle = rgba(c, 0.25 + 0.5 * f);
+        ctx.beginPath();
+        ctx.moveTo(x + R, y); ctx.lineTo(x + s - R, y);
+        ctx.moveTo(x, y + R); ctx.lineTo(x, y + s - R);
+        ctx.stroke();
+      }
+    }
+  }
+
+  function silk(ctx, W, H, t, p) {
+    const { bg, cols, r } = prep(p);
+    // smooth folds: computed small, scaled up (no fine detail to lose)
+    const bw = Math.min(480, W), bh = Math.max(2, Math.round(bw * H / W));
+    const c = document.createElement('canvas');
+    c.width = bw; c.height = bh;
+    const g = c.getContext('2d');
+    const img = g.createImageData(bw, bh);
+    const k1 = 2 + r() * 2, k2 = 1.5 + r() * 2, k3 = 1 + r() * 2, o1 = r() * TAU, o2 = r() * TAU, amp = 1.2 + p.density * 1.6;
+    const ar = W / Math.min(W, H), br = H / Math.min(W, H);
+    for (let y = 0; y < bh; y++) {
+      const v = y / bh * br;
+      for (let x = 0; x < bw; x++) {
+        const u = x / bw * ar;
+        const ph = u * k1 + amp * Math.sin(v * k2 + o1) + 0.8 * Math.sin((u + v) * k3 + o2);
+        const col = along(cols, 0.5 + 0.5 * Math.sin(ph * 0.5 + v));
+        const light = 0.35 + 0.65 * Math.pow(0.5 + 0.5 * Math.cos(ph * 2), 1.5);
+        const out = mix(bg, col, light);
+        const i = (y * bw + x) * 4;
+        img.data[i] = out[0]; img.data[i + 1] = out[1]; img.data[i + 2] = out[2]; img.data[i + 3] = 255;
+      }
+    }
+    g.putImageData(img, 0, 0);
+    ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(c, 0, 0, W, H);
+    ctx.restore();
+  }
+
+  function stagelights(ctx, W, H, t, p) {
+    const { bg, cols, r } = prep(p);
+    const m = Math.min(W, H), D = Math.hypot(W, H);
+    backdrop(ctx, W, H, bg, cols[0], 0.12);
+    ctx.globalCompositeOperation = 'screen';
+    const floor = ctx.createRadialGradient(W / 2, H * 1.1, 0, W / 2, H * 1.1, D * 0.5);
+    floor.addColorStop(0, rgba(cols[1 % cols.length], 0.5)); floor.addColorStop(1, rgba(cols[1 % cols.length], 0));
+    ctx.fillStyle = floor; ctx.fillRect(0, 0, W, H);
+    const n = 4 + Math.round(p.density * 6);
+    for (let i = 0; i < n; i++) {
+      const sx = W * ((i + 0.5) / n + (r() - 0.5) * 0.08), sy = -m * 0.02;
+      const tx = W * (0.5 + (r() - 0.5) * 1.2), ty = H * 1.05;
+      const half = m * (0.08 + r() * 0.14);
+      const len = Math.hypot(tx - sx, ty - sy), nx = -(ty - sy) / len, ny = (tx - sx) / len;
+      const c = cols[i % cols.length];
+      const g = ctx.createLinearGradient(sx, sy, tx, ty);
+      g.addColorStop(0, rgba(mix(c, [255, 255, 255], 0.3), 0.6));
+      g.addColorStop(1, rgba(c, 0));
+      ctx.fillStyle = g;
+      poly(ctx, [[sx, sy], [tx + nx * half, ty + ny * half], [tx - nx * half, ty - ny * half]]);
+      ctx.fill();
+      const src = ctx.createRadialGradient(sx, 0, 0, sx, 0, m * 0.08);
+      src.addColorStop(0, 'rgba(255,255,255,0.9)'); src.addColorStop(1, rgba(c, 0));
+      ctx.fillStyle = src; ctx.fillRect(0, 0, W, H);
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  function confetti(ctx, W, H, t, p) {
+    const { bg, cols, r } = prep(p);
+    const m = Math.min(W, H), D = Math.hypot(W, H);
+    const g = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, D / 2);
+    g.addColorStop(0, rgba(mix(bg, cols[0], 0.25), 1)); g.addColorStop(1, rgba(bg, 1));
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    const n = Math.round((60 + p.density * 260) * (W * H) / (m * m) / 1.8);
+    for (let i = 0; i < n; i++) {
+      const x = r() * W, y = r() * H, s = m * (0.006 + r() * 0.014), rot = r() * TAU, kind = r(), c = cols[Math.floor(r() * cols.length)];
+      ctx.save();
+      ctx.translate(x, y); ctx.rotate(rot);
+      ctx.fillStyle = rgba(c, 0.95);
+      if (kind < 0.45) ctx.fillRect(-s, -s * 0.45, s * 2, s * 0.9);
+      else if (kind < 0.75) { ctx.beginPath(); ctx.arc(0, 0, s * 0.6, 0, TAU); ctx.fill(); }
+      else {
+        ctx.strokeStyle = rgba(c, 0.95); ctx.lineWidth = s * 0.45; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.arc(0, s * 1.2, s * 1.4, -Math.PI * 0.75, -Math.PI * 0.25); ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+
+  function cubes(ctx, W, H, t, p) {
+    const { bg, cols, r } = prep(p);
+    const m = Math.min(W, H);
+    const s = m / (5 + p.density * 12);       // cube edge
+    const w = Math.sqrt(3) * s;
+    const ang = r() * TAU, ux = Math.cos(ang), uy = Math.sin(ang), half = Math.hypot(W, H) / 2;
+    const white = [255, 255, 255];
+    ctx.fillStyle = rgba(bg, 1);
+    ctx.fillRect(0, 0, W, H);
+    ctx.lineJoin = 'round';
+    for (let row = -1, y = -s; y < H + 2 * s; row++, y += 1.5 * s) {
+      for (let x = (row & 1) * w / 2 - w; x < W + w; x += w) {
+        const f = clamp01((((x - W / 2) * ux + (y - H / 2) * uy) / half + 1) / 2 + (r() - 0.5) * 0.25);
+        const base = along(cols, f);
+        const top = [x, y - s], l = [x - w / 2, y - s / 2], rr = [x + w / 2, y - s / 2], ctr = [x, y], bl = [x - w / 2, y + s / 2], br = [x + w / 2, y + s / 2], bot = [x, y + s];
+        [[[top, rr, ctr, l], mix(base, white, 0.25)], [[l, ctr, bot, bl], base], [[ctr, rr, br, bot], mix(base, bg, 0.55)]].forEach(([pts, c]) => {
+          poly(ctx, pts);
+          ctx.fillStyle = rgba(c, 1);
+          ctx.fill();
+          ctx.strokeStyle = rgba(c, 1); // hide hairline seams between faces
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        });
+      }
+    }
+  }
+
   // ---------------------------------------------------------------- grain
   // A fixed noise tile drawn softly on top hides 8-bit banding in smooth
   // gradients, which is very visible on LED walls.
@@ -822,6 +1180,18 @@
     { id: 'solid', name: 'Solid Color', draw: solid, kind: 'static' },
     { id: 'halftone', name: 'Halftone Dots', draw: halftone, kind: 'static' },
     { id: 'topo', name: 'Topographic', draw: topo, kind: 'static' },
+    { id: 'hexgrid', name: 'Hex Grid', draw: hexgrid, kind: 'static' },
+    { id: 'rays', name: 'Sunburst', draw: rays, kind: 'static' },
+    { id: 'beams', name: 'Light Beams', draw: beams, kind: 'static' },
+    { id: 'stagelights', name: 'Stage Lights', draw: stagelights, kind: 'static' },
+    { id: 'circuit', name: 'Circuit', draw: circuit, kind: 'static' },
+    { id: 'wavelines', name: 'Wave Lines', draw: wavelines, kind: 'static' },
+    { id: 'silk', name: 'Silk', draw: silk, kind: 'static' },
+    { id: 'glass', name: 'Glass Panels', draw: glass, kind: 'static' },
+    { id: 'dotmatrix', name: 'Dot Matrix', draw: dotmatrix, kind: 'static' },
+    { id: 'arabesque', name: 'Arabesque', draw: arabesque, kind: 'static' },
+    { id: 'cubes', name: 'Iso Cubes', draw: cubes, kind: 'static' },
+    { id: 'confetti', name: 'Confetti', draw: confetti, kind: 'static' },
   ];
 
   const PALETTES = [

@@ -51,7 +51,12 @@
 
       <section>
         <h2 data-i18n="ab.style">Style</h2>
+        <div class="seg kind-seg" id="kindSeg" role="radiogroup" aria-label="Style type" data-i18n-aria="ab.kindAria">
+          <label><input type="radio" name="kind" value="animated" checked><span data-i18n="ab.kindAnimated">Animated</span></label>
+          <label><input type="radio" name="kind" value="static"><span data-i18n="ab.kindStatic">Static</span></label>
+        </div>
         <div class="styles" id="styles"></div>
+        <p class="note" id="kindNote" hidden></p>
       </section>
 
       <section>
@@ -187,6 +192,33 @@
           </label>
         </div>
         <p class="note" data-i18n="ab.loopNote">The video loops seamlessly: the last frame flows into the first.</p>
+      </section>
+
+      <section>
+        <h2 data-i18n="ss.title">Screensaver</h2>
+        <p class="note" data-i18n="ss.intro">Play this background live and full screen on any computer, at its own resolution, with no file to download.</p>
+        <div class="row btns ss-btns">
+          <a class="pill pill-ghost pill-sm" id="ssOpen" href="screensaver.html" target="_blank" rel="noopener" data-i18n="ss.open">Open full screen</a>
+          <button type="button" class="ghost" id="ssCopy" data-i18n="ss.copy">Copy screensaver link</button>
+        </div>
+        <details class="howto">
+          <summary data-i18n="ss.how">Set it as the screensaver</summary>
+          <h3>Windows</h3>
+          <ol>
+            <li><span data-i18n="ss.win1">Install Lively Wallpaper (free, open source):</span> <a href="https://github.com/rocksdanister/lively" target="_blank" rel="noopener">github.com/rocksdanister/lively</a></li>
+            <li data-i18n="ss.win2">In Lively, add a wallpaper and paste the screensaver link.</li>
+            <li data-i18n="ss.win3">Open Lively's Settings → Screensaver and follow the steps.</li>
+          </ol>
+          <h3>Mac</h3>
+          <ol>
+            <li><span data-i18n="ss.mac1">Install WebViewScreenSaver (free, open source):</span> <a href="https://github.com/liquidx/webviewscreensaver" target="_blank" rel="noopener">github.com/liquidx/webviewscreensaver</a></li>
+            <li data-i18n="ss.mac2">Open System Settings → Screen Saver and choose WebViewScreenSaver.</li>
+            <li data-i18n="ss.mac3">Open its Options and add the screensaver link.</li>
+          </ol>
+          <h3 data-i18n="ss.stillTitle">Still image, no extra app</h3>
+          <p data-i18n="ss.still">Download a PNG at your screen size (preset “This screen”), put it in a folder, and choose that folder in the built-in Photos screensaver on Windows or a photo screensaver on Mac.</p>
+          <p class="note" data-i18n="ss.logoNote">The event name is part of the link. The logo is saved in this browser only, so screensaver apps won't show it.</p>
+        </details>
       </section>
 
       <section class="actions">

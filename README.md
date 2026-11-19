@@ -30,7 +30,9 @@ python3 -m http.server 8000
 
 ## خلفيات Abstract
 
-- **الستايلات (6):** Gradient Blobs، و Waves، و Flow Lines، و Bokeh، و Low Poly، و Smooth Gradient.
+- **ستايلات متحركة (12):** Gradient Blobs، و Waves، و Aurora، و Flow Lines، و Bokeh، و Constellation، و Ripples، و Starfield، و Retro Grid، و Light Stripes، و Low Poly، و Smooth Gradient. كلها بتلف loop من غير قطع.
+- **ستايلات ثابتة (6):** Mesh Gradient، و Linear Gradient، و Spotlight، و Solid Color، و Halftone Dots، و Topographic. مش بتتحرك في الفيديو، بس اللوجو والنص ممكن يتحركوا عليها.
+- **preset "This screen":** بيحط رزلوشن الشاشة اللي فاتح عليها الموقع، عشان تعمل wallpaper أو صورة screensaver بالمقاس بالظبط.
 - **الألوان:** 8 باليتات جاهزة، وتقدر تعدل كل لون منهم بنفسك (أول لون هو الخلفية).
 - **شكل جديد 🎲:** بيغيّر التوزيع بنفس الستايل والألوان.
 - **الكثافة:** عدد العناصر في الصورة.
@@ -56,6 +58,13 @@ python3 -m http.server 8000
   - حركات الظهور بتدخل في أول الفيديو وتخرج في آخره، فالفيديو بيفضل يلف loop من غير قطع.
   - لو الاتنين بيتحركوا، اسم الإيفنت بيظهر بعد اللوجو بلحظة.
   - الصورة PNG بتطلع من غير حركة.
+- **Screensaver:**
+  - صفحة `screensaver.html` بتشغّل الخلفية live بملء الشاشة على أي كمبيوتر، بالرزلوشن بتاعه، ومن غير نهاية.
+  - من صفحة الخلفيات، زرار "Copy screensaver link" بيدّيك لينك بنفس الشكل بالظبط.
+  - **Windows:** في برنامج [Lively Wallpaper](https://github.com/rocksdanister/lively) (مجاني ومفتوح المصدر)، ضيف wallpaper بالّينك ده، وبعدين فعّل الـ screensaver من Settings ← Screensaver.
+  - **Mac:** في [WebViewScreenSaver](https://github.com/liquidx/webviewscreensaver) (مجاني ومفتوح المصدر)، ضيف اللينك من Options.
+  - **صورة ثابتة من غير أي برنامج:** حمّل PNG بمقاس الشاشة، وحطها في فولدر، واختاره في screensaver الصور اللي جوه النظام.
+  - اسم الإيفنت جوه اللينك، لكن اللوجو متخزن في المتصفح بس، فبرامج الـ screensaver مش هتعرضه.
 - **رابط بالإعدادات:** كل الإعدادات بتتحفظ في عنوان الصفحة، فتقدر تبعت اللينك لحد يفتح نفس الشكل بالظبط.
 
 ### حدود الفيديو
@@ -77,6 +86,7 @@ python3 -m http.server 8000
 
 ```
 index.html / home.js الصفحة الرئيسية
+screensaver.html/.js صفحة الـ screensaver (live بملء الشاشة)
 abstract.html        صفحة الخلفيات
 abstract.js          واجهة صفحة الخلفيات
 generators.js        رسم الستايلات (resolution-independent، loop-safe)

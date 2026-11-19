@@ -583,3 +583,18 @@ output { color: var(--color-bone-white); direction: ltr; unicode-bidi: isolate; 
   .tabs a { padding: 6px 8px; font-size: 12px; }
   .lang-toggle { padding: 4px 8px; font-size: 12px; }
 }
+
+.kind-seg { margin-bottom: 12px; }
+.style-btn[hidden] { display: none !important; }
+
+/* ---------- screensaver how-to ---------- */
+.ss-btns { margin-top: 12px; }
+.ss-btns .pill, .ss-btns button { flex: 1; }
+.howto { margin-top: 12px; border: 1px solid var(--color-wire-gray); border-radius: var(--radius-card); padding: 12px 16px; background: var(--color-recess-black); }
+.howto summary { cursor: pointer; font-size: 14px; line-height: 20px; font-weight: 500; color: var(--color-off-white); }
+.howto summary:focus-visible { outline: 1px solid var(--color-bone-white); outline-offset: 4px; border-radius: var(--radius-sm); }
+.howto h3 { margin: 16px 0 6px; color: var(--color-bone-white); font-size: 13px; }
+.howto ol { margin: 0; padding-inline-start: 20px; color: var(--color-off-white); font-size: 13px; line-height: 20px; }
+.howto li + li { margin-top: 4px; }
+.howto p { margin: 6px 0 0; color: var(--color-off-white); font-size: 13px; line-height: 20px; }
+.howto a { color: var(--color-bone-white); word-break: break-all; }

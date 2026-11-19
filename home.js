@@ -20,8 +20,9 @@
   const ctx = ab.getContext('2d', { alpha: false });
   const { STYLES, PALETTES, render } = window.Abstract;
   const looks = [
-    ['waves', 'ocean'], ['blobs', 'neon'], ['flow', 'aurora'],
-    ['bokeh', 'sunset'], ['lowpoly', 'corporate'], ['gradient', 'pastel'],
+    ['waves', 'ocean'], ['aurora', 'aurora'], ['retrogrid', 'neon'], ['blobs', 'neon'],
+    ['constellation', 'ocean'], ['flow', 'aurora'], ['starfield', 'pastel'], ['bokeh', 'sunset'],
+    ['ripples', 'corporate'], ['stripes', 'gold'],
   ].filter(([s]) => STYLES.some(x => x.id === s));
   const SECS = 6;
   const start = performance.now();

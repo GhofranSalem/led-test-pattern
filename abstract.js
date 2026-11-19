@@ -162,6 +162,10 @@
     const keep = sel.value;
     sel.innerHTML = '';
     sel.add(new Option(I18n.t('res.pick'), ''));
+    // the monitor this page is open on, in real pixels (for wallpapers/screensavers)
+    const dpr = window.devicePixelRatio || 1;
+    const sw = Math.round(screen.width * dpr), sh = Math.round(screen.height * dpr);
+    if (sw > 0 && sh > 0) sel.add(new Option(`${I18n.t('preset.thisScreen')} — ${sw}×${sh}`, `${sw}x${sh}`));
     PRESETS.forEach(([n, w, h]) => sel.add(new Option(`${I18n.t(n)} — ${w}×${h}`, `${w}x${h}`)));
     sel.value = keep;
   }
@@ -181,7 +185,7 @@
       label.textContent = s.name;
       b.append(c, label);
       box.appendChild(b);
-      thumbs.push({ id: s.id, canvas: c, btn: b });
+      thumbs.push({ id: s.id, kind: s.kind, canvas: c, btn: b });
     });
     box.addEventListener('click', e => {
       const b = e.target.closest('.style-btn');
@@ -191,8 +195,13 @@
     });
   }
 
+  const kindOf = id => (STYLES.find(s => s.id === id) || STYLES[0]).kind;
+
   function drawThumbs() {
+    const kind = kindOf(state.style);
     thumbs.forEach(t => {
+      t.btn.hidden = t.kind !== kind;
+      if (t.btn.hidden) return; // only draw the visible category
       const c = t.canvas.getContext('2d');
       render(c, t.canvas.width, t.canvas.height, 0, { ...params(), style: t.id, grain: false });
       t.btn.setAttribute('aria-pressed', String(t.id === state.style));
@@ -304,10 +313,16 @@
     $('videoInfo').textContent = err ? '' : info;
 
     updateLogoUI(W, H, err);
+    const isStatic = kindOf(state.style) === 'static';
+    document.querySelector(`input[name="kind"][value="${isStatic ? 'static' : 'animated'}"]`).checked = true;
+    $('speed').disabled = isStatic;
+    $('kindNote').textContent = isStatic ? I18n.t('ab.staticNote') : '';
+    $('kindNote').hidden = !isStatic;
     updateTextUI();
     markPalette();
     drawThumbs();
     try { history.replaceState(null, '', '#' + toHash()); } catch { /* ignore */ }
+    $('ssOpen').href = 'screensaver.html#' + toHash();
     $('otherTab').href = 'test-pattern.html#' + new URLSearchParams(state.cabOn
       ? { cabOn: 1, cabCols: state.cabCols, cabRows: state.cabRows, cabW: state.cabW, cabH: state.cabH }
       : { w: state.w, h: state.h, cabOn: 0 }).toString();
@@ -320,6 +335,12 @@
   $('controls').addEventListener('input', e => {
     const id = e.target.id;
     if (id.startsWith('logo') || id.startsWith('text')) return; // handled by their own sections
+    if (e.target.name === 'kind') {
+      // switching category picks that category's first style
+      if (kindOf(state.style) !== e.target.value) state.style = STYLES.find(s => s.kind === e.target.value).id;
+      changed();
+      return;
+    }
     if (e.target.closest('#colors')) {
       state.palette[Number(e.target.dataset.i)] = e.target.value;
     } else if (id === 'preset') {
@@ -609,6 +630,27 @@
   });
 
   $('cancel').addEventListener('click', () => { if (abort) abort.abort(); });
+
+  // ---------------------------------------------------------------- screensaver link
+  // Screensaver apps need a public address: use this site's address when it is
+  // served from the web, otherwise the published GitHub Pages site.
+  const PUBLIC_BASE = 'https://ghofransalem.github.io/led-test-pattern/';
+  function screensaverUrl() {
+    const h = location.hostname;
+    const base = /\.github\.io$/.test(h) || h === 'localhost' || h === '127.0.0.1'
+      ? location.href.split('#')[0].replace(/[^/]*$/, '')
+      : PUBLIC_BASE;
+    return base + 'screensaver.html#' + toHash();
+  }
+  $('ssCopy').addEventListener('click', async () => {
+    const url = screensaverUrl();
+    try {
+      await navigator.clipboard.writeText(url);
+      status(I18n.t('ss.copied'));
+    } catch {
+      status(I18n.t('tp.copyThis', { url }));
+    }
+  });
 
   // ---------------------------------------------------------------- init
   I18n.apply();

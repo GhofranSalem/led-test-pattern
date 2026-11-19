@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LED Screen Content — Screensaver</title>
+  <meta name="description" content="A full-screen, endlessly looping abstract background for use as a screensaver.">
+  <meta name="robots" content="noindex">
+  <script src="i18n.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700;800&family=Cairo:wght@400;700;900&family=Montserrat:wght@400;700;900&family=Tajawal:wght@400;700;900&family=Geist:wght@400;500&display=swap">
+  <style>
+    :root { color-scheme: dark; }
+    html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+    body { cursor: none; }
+    canvas { display: block; width: 100vw; height: 100vh; }
+    .hint {
+      position: fixed; inset: auto 0 24px 0; margin: 0 auto; width: max-content; max-width: calc(100vw - 32px);
+      padding: 8px 16px; border-radius: 9999px; background: rgba(14, 14, 16, .8); color: #fafafa;
+      font: 500 13px/20px "Geist", "Cairo", system-ui, sans-serif; text-align: center;
+      transition: opacity .6s; pointer-events: none;
+    }
+    .hint.gone { opacity: 0; }
+  </style>
+</head>
+<body>
+  <canvas id="c" dir="ltr"></canvas>
+  <p class="hint" id="hint" data-i18n="ss.pageHint">Click for full screen · press Esc to exit</p>
+  <script src="generators.js"></script>
+  <script src="logo.js"></script>
+  <script src="text.js"></script>
+  <script src="anim.js"></script>
+  <script src="screensaver.js"></script>
+</body>
+</html>

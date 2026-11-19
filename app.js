@@ -166,6 +166,10 @@
       : '';
 
     try { history.replaceState(null, '', '#' + toQuery(s)); } catch { /* file:// in some browsers */ }
+    // carry the resolution over to the other page
+    $('otherTab').href = 'index.html#' + new URLSearchParams(s.cabOn
+      ? { cabOn: 1, cabCols: s.cabCols, cabRows: s.cabRows, cabW: s.cabW, cabH: s.cabH }
+      : { w: s.w, h: s.h, cabOn: 0 }).toString();
 
     if (v.error) return;
     clearTimeout(timer);
@@ -192,14 +196,11 @@
         status('المتصفح مقدرش يعمل الصورة دي — غالباً الرزلوشن كبير على الجهاز ده.', true);
         return;
       }
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = name;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
-      status(`اتحمّل: ${name} (${(blob.size / 1048576).toFixed(1)} MB)`);
+      window.saveFile(blob, name).then(r => {
+        if (r === 'saved') status(`اتحمّل: ${name} (${(blob.size / 1048576).toFixed(1)} MB)`);
+        else if (r === 'declined') status('التحميل اتلغى.');
+        else status('مقدرتش أحفظ الملف.', true);
+      });
     }, 'image/png');
   }
 

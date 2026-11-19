@@ -507,15 +507,7 @@ output { color: var(--color-bone-white); direction: ltr; unicode-bidi: isolate; 
   border-bottom: 1px solid var(--color-wire-gray);
 }
 .tool-body { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 24px; flex: 1; }
-.tag {
-  padding: 2px 8px;
-  border: 1px solid var(--color-wire-gray);
-  border-radius: var(--radius-sm);
-  font-size: 12px;
-  line-height: 18px;
-  color: var(--color-mute-gray);
-}
-.tool-body h3 { margin: 4px 0 0; font-size: 20px; line-height: 28px; font-weight: 600; }
+.tool-body h3 { margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; }
 .tool-body p { margin: 0; font-size: 14px; line-height: 22px; color: var(--color-mute-gray); }
 .feats { margin: 0 0 8px; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; flex: 1; }
 .feats li { position: relative; padding-inline-start: 20px; font-size: 14px; line-height: 20px; color: var(--color-off-white); }

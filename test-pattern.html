@@ -54,12 +54,36 @@
         <label><span data-i18n="panel.label">Cabinet type (pixel pitch)</span>
           <select id="panel"></select>
         </label>
+        <div class="row btns cab-btns">
+          <button type="button" id="cabAdd" class="ghost" data-i18n="cab.add">New cabinet type</button>
+          <button type="button" id="cabDel" class="ghost" hidden data-i18n="cab.del">Delete this type</button>
+        </div>
+        <div id="cabForm" class="cab-form" hidden>
+          <label><span data-i18n="ct.name">Name</span><input type="text" id="ctName" maxlength="40" placeholder="e.g. Absen PL2.5" data-i18n-ph="ct.namePh"></label>
+          <div class="row">
+            <label><span data-i18n="ct.mmW">Width (mm)</span><input type="number" id="ctMmW" min="1" step="0.1"></label>
+            <label><span data-i18n="ct.mmH">Height (mm)</span><input type="number" id="ctMmH" min="1" step="0.1"></label>
+          </div>
+          <div class="row">
+            <label><span data-i18n="cab.w">Cabinet width (px)</span><input type="number" id="ctPxW" min="1"></label>
+            <label><span data-i18n="cab.h">Cabinet height (px)</span><input type="number" id="ctPxH" min="1"></label>
+          </div>
+          <div class="row">
+            <label><span data-i18n="cab.kg">Weight per cabinet (kg)</span><input type="number" id="ctKg" min="0" step="0.1"></label>
+            <label><span data-i18n="cab.watt">Max power per cabinet (W)</span><input type="number" id="ctWatt" min="0"></label>
+          </div>
+          <div class="row btns">
+            <button type="button" id="ctSave" data-i18n="ct.save">Save type</button>
+            <button type="button" id="ctCancel" class="ghost" data-i18n="ct.cancel">Cancel</button>
+          </div>
+          <p class="physical err" id="ctMsg" role="status"></p>
+        </div>
         <div id="cabFields" class="cab-fields">
           <div class="row">
             <label><span data-i18n="scr.w">Screen width (m)</span><input type="number" id="scrW" min="0" step="0.01" inputmode="decimal"></label>
             <label><span data-i18n="scr.h">Screen height (m)</span><input type="number" id="scrH" min="0" step="0.01" inputmode="decimal"></label>
           </div>
-          <p class="physical scr-note" id="scrNote" hidden></p>
+          <p class="physical scr-note" id="scrNote" data-i18n="scr.needPanel" hidden>Choose a cabinet type to enter the screen size in meters.</p>
           <div class="row">
             <label><span data-i18n="cab.cols">Columns</span><input type="number" id="cabCols" min="1" value="12"></label>
             <label><span data-i18n="cab.rows">Rows</span><input type="number" id="cabRows" min="1" value="4"></label>
@@ -68,7 +92,21 @@
             <label><span data-i18n="cab.w">Cabinet width (px)</span><input type="number" id="cabW" min="1" value="192"></label>
             <label><span data-i18n="cab.h">Cabinet height (px)</span><input type="number" id="cabH" min="1" value="192"></label>
           </div>
+          <div class="row">
+            <label><span data-i18n="cab.kg">Weight per cabinet (kg)</span><input type="number" id="cabKg" min="0" step="0.1" value="7.5"></label>
+            <label><span data-i18n="cab.watt">Max power per cabinet (W)</span><input type="number" id="cabWatt" min="0" value="180"></label>
+          </div>
           <label class="check"><input type="checkbox" id="cabinets" checked> <span data-i18n="tp.drawCab">Draw cabinet borders and numbers</span></label>
+          <div class="row">
+            <label><span data-i18n="port.label">Sending-card ports on the image</span>
+              <select id="ports">
+                <option value="off" data-i18n="port.off">Off</option>
+                <option value="rows" data-i18n="port.rows">Horizontal (by rows)</option>
+                <option value="cols" data-i18n="port.cols">Vertical (by columns)</option>
+              </select>
+            </label>
+            <label><span data-i18n="port.px">Pixels per port</span><input type="number" id="portPx" min="1" value="655360"></label>
+          </div>
         </div>
         <div class="summary" id="summary" hidden></div>
       </section>
@@ -125,6 +163,7 @@
   </main>
 
   <script src="save.js"></script>
+  <script src="cabinets.js"></script>
   <script src="pattern.js"></script>
   <script src="app.js"></script>
 </body>

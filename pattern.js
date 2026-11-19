@@ -120,6 +120,45 @@
     }
   }
 
+  // Sending-card port chains: a coloured line through the cabinets in data order,
+  // a dot where each port starts and an arrow where it ends.
+  const PORT_COLORS = ['#ff3b30', '#34c759', '#ffcc00', '#ff2dd4', '#00e5ff', '#ff9500', '#a78bfa', '#ffffff'];
+  function drawPorts(ctx, s) {
+    const { cabW: cw, cabH: ch } = s;
+    const lw = Math.max(2, Math.round(Math.min(cw, ch) * 0.05));
+    const center = ([c, r]) => [c * cw + cw / 2, r * ch + ch / 2];
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    s.portChains.forEach((chain, k) => {
+      const color = PORT_COLORS[k % PORT_COLORS.length];
+      const pts = chain.map(center);
+      // dark halo first so the line reads on any background
+      [['rgba(0,0,0,0.8)', lw + 4], [color, lw]].forEach(([c, w]) => {
+        ctx.strokeStyle = c;
+        ctx.lineWidth = w;
+        ctx.beginPath();
+        pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+        ctx.stroke();
+      });
+      ctx.fillStyle = color;
+      const [x0, y0] = pts[0];
+      ctx.beginPath(); ctx.arc(x0, y0, lw * 2, 0, Math.PI * 2); ctx.fill();
+      if (pts.length > 1) {
+        const [xa, ya] = pts[pts.length - 2], [xb, yb] = pts[pts.length - 1];
+        const a = Math.atan2(yb - ya, xb - xa), L = lw * 4;
+        ctx.beginPath();
+        ctx.moveTo(xb, yb);
+        ctx.lineTo(xb - L * Math.cos(a - 0.5), yb - L * Math.sin(a - 0.5));
+        ctx.lineTo(xb - L * Math.cos(a + 0.5), yb - L * Math.sin(a + 0.5));
+        ctx.closePath(); ctx.fill();
+      }
+      const size = Math.max(9, Math.floor(Math.min(cw, ch) * 0.16));
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      outlinedText(ctx, `Port ${k + 1}`, x0, y0 + Math.min(ch * 0.3, size * 1.6), size);
+    });
+  }
+
   function drawCircles(ctx, W, H, lw) {
     const m = Math.min(W, H);
     const r = m * 0.12, pad = m * 0.03 + r;
@@ -232,6 +271,7 @@
     }
     if (s.grid && s.gridStep >= 2) drawGrid(ctx, W, H, s.gridStep);
     if (s.cabOn && s.cabinets) drawCabinets(ctx, s);
+    if (s.cabOn && s.ports && s.ports !== 'off' && s.portChains) drawPorts(ctx, s);
     if (s.circles) drawCircles(ctx, W, H, lw);
     if (s.cross) drawCross(ctx, W, H, lw);
     if (s.border) drawBorder(ctx, W, H);

@@ -172,6 +172,9 @@ input.tiny { display: inline-block; width: 72px; margin: 0; padding: 4px 8px; }
 .cab-fields.off { opacity: .4; pointer-events: none; }
 .physical { margin: 12px 0 0; color: var(--color-mute-gray); font-size: 12px; line-height: 18px; }
 .scr-note { margin: -4px 0 12px; }
+.cab-form { border: 1px solid var(--color-smoke); border-radius: 12px; padding: 12px; margin: 0 0 12px; }
+.cab-form .physical:empty { display: none; }
+.cab-btns { margin: -4px 0 12px; }
 .summary { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .summary div { border: 1px solid var(--color-smoke); border-radius: 4px; padding: 8px 10px; min-width: 0; }
 .summary span { display: block; color: var(--color-mute-gray); font-size: 12px; line-height: 16px; }

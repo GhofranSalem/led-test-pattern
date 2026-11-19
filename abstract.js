@@ -6,10 +6,10 @@
   const PRESETS = [
     ['Full HD', 1920, 1080],
     ['4K UHD', 3840, 2160],
-    ['Full HD عمودي', 1080, 1920],
-    ['2 × Full HD عرض', 3840, 1080],
-    ['3 × Full HD عرض', 5760, 1080],
-    ['4 × Full HD عرض', 7680, 1080],
+    ['preset.portrait', 1080, 1920],
+    ['preset.wide2', 3840, 1080],
+    ['preset.wide3', 5760, 1080],
+    ['preset.wide4', 7680, 1080],
     ['HD', 1280, 720],
   ];
 
@@ -30,8 +30,8 @@
     speed: 1,
     secs: 30,
     fps: 30,
-    logo: { size: 0.25, anchor: 'br', margin: 0.05, cx: 0.5, cy: 0.5, opacity: 1 },
-    text: { title: '', sub: '', font: 'Cairo', weight: 700, color: '#ffffff', size: 0.12, anchor: 'c', margin: 0.05, cx: 0.5, cy: 0.5, shadow: true },
+    logo: { size: 0.25, anchor: 'br', margin: 0.05, cx: 0.5, cy: 0.5, opacity: 1, anim: 'none' },
+    text: { title: '', sub: '', font: 'Cairo', weight: 700, color: '#ffffff', size: 0.12, anchor: 'c', margin: 0.05, cx: 0.5, cy: 0.5, shadow: true, anim: 'none' },
   };
   let logo = null; // loaded logo image (see logo.js)
 
@@ -46,16 +46,26 @@
   }
 
   // background + logo: used by the preview, the PNG and every video frame
-  function renderFrame(c, W, H, t, p) {
+  // `animated`: apply logo/text motion (video and playing preview); PNGs stay still
+  function renderFrame(c, W, H, t, p, animated) {
     render(c, W, H, t, p);
-    Logo.draw(c, logo, state.logo, W, H);
-    EventText.draw(c, state.text, W, H);
+    if (logo) {
+      const r = Logo.rect(logo, state.logo, W, H);
+      const st = Anim.at(animated ? state.logo.anim : 'none', t, state.secs, 0);
+      Anim.apply(c, st, r.x + r.w / 2, r.y + r.h / 2, H, () => Logo.draw(c, logo, state.logo, W, H));
+    }
+    const L = EventText.layout(state.text, W, H);
+    if (L) {
+      // the name follows the logo by a beat when both move
+      const st = Anim.at(animated ? state.text.anim : 'none', t, state.secs, logo && state.logo.anim !== 'none' ? 0.3 : 0);
+      Anim.apply(c, st, L.x + L.w / 2, L.y + L.h / 2, H, () => EventText.draw(c, state.text, W, H));
+    }
   }
 
   function validate(W, H) {
-    if (!(W >= 1 && H >= 1)) return 'العرض والارتفاع لازم يكونوا أكبر من صفر.';
-    if (W > MAX_SIDE || H > MAX_SIDE) return `أقصى طول لأي ضلع في المتصفح ${MAX_SIDE} px.`;
-    if (W * H > MAX_AREA) return 'الرزلوشن أكبر من حد المتصفح.';
+    if (!(W >= 1 && H >= 1)) return I18n.t('err.zero');
+    if (W > MAX_SIDE || H > MAX_SIDE) return I18n.t('err.side', { max: MAX_SIDE });
+    if (W * H > MAX_AREA) return I18n.t('err.area');
     return '';
   }
 
@@ -70,11 +80,11 @@
     p.set('style', state.style);
     p.set('pal', state.palette.map(c => c.slice(1)).join('-'));
     const L = state.logo;
-    p.set('logo', [L.size, L.anchor, L.margin, +L.cx.toFixed(4), +L.cy.toFixed(4), L.opacity].join('~'));
+    p.set('logo', [L.size, L.anchor, L.margin, +L.cx.toFixed(4), +L.cy.toFixed(4), L.opacity, L.anim].join('~'));
     const T = state.text;
     if (T.title) p.set('title', T.title);
     if (T.sub) p.set('sub', T.sub);
-    p.set('txt', [T.font, T.weight, T.color.slice(1), T.size, T.anchor, T.margin, +T.cx.toFixed(4), +T.cy.toFixed(4), T.shadow ? 1 : 0].join('~'));
+    p.set('txt', [T.font, T.weight, T.color.slice(1), T.size, T.anchor, T.margin, +T.cx.toFixed(4), +T.cy.toFixed(4), T.shadow ? 1 : 0, T.anim].join('~'));
     return p.toString();
   }
 
@@ -88,19 +98,20 @@
       if (cols.length === 5) state.palette = cols;
     }
     if (p.has('logo')) {
-      const [size, anchor, margin, cx, cy, opacity] = p.get('logo').split('~');
+      const [size, anchor, margin, cx, cy, opacity, anim] = p.get('logo').split('~');
       const L = state.logo, n = (v, lo, hi, d) => (isFinite(+v) ? Math.min(hi, Math.max(lo, +v)) : d);
       L.size = n(size, 0.03, 1, L.size);
       if (/^(tl|t|tr|l|c|r|bl|b|br|custom)$/.test(anchor)) L.anchor = anchor;
       L.margin = n(margin, 0, 0.25, L.margin);
       L.cx = n(cx, 0, 1, L.cx); L.cy = n(cy, 0, 1, L.cy);
       L.opacity = n(opacity, 0.1, 1, L.opacity);
+      if (Anim.TYPES.some(a => a.id === anim)) L.anim = anim;
     }
     const T = state.text;
     if (p.has('title')) T.title = p.get('title').slice(0, 200);
     if (p.has('sub')) T.sub = p.get('sub').slice(0, 200);
     if (p.has('txt')) {
-      const [font, weight, color, sz, anchor, margin, cx, cy, shadow] = p.get('txt').split('~');
+      const [font, weight, color, sz, anchor, margin, cx, cy, shadow, anim] = p.get('txt').split('~');
       const n = (v, lo, hi, d) => (isFinite(+v) && v !== '' ? Math.min(hi, Math.max(lo, +v)) : d);
       if (EventText.FONTS.some(f => f.id === font)) T.font = font;
       if (['400', '700', '900'].includes(weight)) T.weight = Number(weight);
@@ -110,6 +121,7 @@
       T.margin = n(margin, 0, 0.25, T.margin);
       T.cx = n(cx, 0, 1, T.cx); T.cy = n(cy, 0, 1, T.cy);
       T.shadow = shadow !== '0';
+      if (Anim.TYPES.some(a => a.id === anim)) T.anim = anim;
     }
   }
 
@@ -133,6 +145,8 @@
     $('textSize').value = T.size;
     $('textMargin').value = T.margin;
     $('textShadow').checked = T.shadow;
+    $('textAnim').value = T.anim;
+    $('logoAnim').value = state.logo.anim;
   }
 
   function formToState() {
@@ -145,8 +159,15 @@
   // ---------------------------------------------------------------- UI builders
   function fillPresets() {
     const sel = $('preset');
-    sel.add(new Option('— اختار —', ''));
-    PRESETS.forEach(([n, w, h]) => sel.add(new Option(`${n} — ${w}×${h}`, `${w}x${h}`)));
+    const keep = sel.value;
+    sel.innerHTML = '';
+    sel.add(new Option(I18n.t('res.pick'), ''));
+    // the monitor this page is open on, in real pixels (for wallpapers/screensavers)
+    const dpr = window.devicePixelRatio || 1;
+    const sw = Math.round(screen.width * dpr), sh = Math.round(screen.height * dpr);
+    if (sw > 0 && sh > 0) sel.add(new Option(`${I18n.t('preset.thisScreen')} — ${sw}×${sh}`, `${sw}x${sh}`));
+    PRESETS.forEach(([n, w, h]) => sel.add(new Option(`${I18n.t(n)} — ${w}×${h}`, `${w}x${h}`)));
+    sel.value = keep;
   }
 
   const thumbs = [];
@@ -164,7 +185,7 @@
       label.textContent = s.name;
       b.append(c, label);
       box.appendChild(b);
-      thumbs.push({ id: s.id, canvas: c, btn: b });
+      thumbs.push({ id: s.id, kind: s.kind, canvas: c, btn: b });
     });
     box.addEventListener('click', e => {
       const b = e.target.closest('.style-btn');
@@ -174,8 +195,13 @@
     });
   }
 
+  const kindOf = id => (STYLES.find(s => s.id === id) || STYLES[0]).kind;
+
   function drawThumbs() {
+    const kind = kindOf(state.style);
     thumbs.forEach(t => {
+      t.btn.hidden = t.kind !== kind;
+      if (t.btn.hidden) return; // only draw the visible category
       const c = t.canvas.getContext('2d');
       render(c, t.canvas.width, t.canvas.height, 0, { ...params(), style: t.id, grain: false });
       t.btn.setAttribute('aria-pressed', String(t.id === state.style));
@@ -244,7 +270,7 @@
 
   function drawPreview() {
     if (!previewW) return;
-    renderFrame(ctx, previewW, previewH, currentT(), params());
+    renderFrame(ctx, previewW, previewH, currentT(), params(), playing);
   }
 
   function loop() {
@@ -255,7 +281,7 @@
   $('play').addEventListener('click', () => {
     if (playing) { tPaused = currentT(); playing = false; }
     else { t0 = performance.now() - tPaused * state.secs * 1000; playing = true; }
-    $('play').textContent = playing ? '⏸ إيقاف الحركة' : '▶ تشغيل الحركة';
+    $('play').textContent = I18n.t(playing ? 'ab.pause' : 'ab.play');
     drawPreview();
   });
 
@@ -281,16 +307,22 @@
     const { VW, VH } = videoSize(W, H);
     const mb = (Math.min(120e6, Math.max(8e6, VW * VH * state.fps * 0.12)) * state.secs) / 8 / 1048576;
     let info = VideoExport.supported()
-      ? `الفيديو: ${VW}×${VH} · ${state.secs} ثانية · ${state.fps}fps · حوالي ${Math.round(mb)} MB`
-      : 'تحميل الفيديو محتاج Chrome أو Edge على الكمبيوتر.';
-    if (VideoExport.supported() && (VW !== W || VH !== H)) info += ` — اتزوّد بكسل أسود لأن H.264 محتاج أرقام زوجية.`;
+      ? I18n.t('ab.videoInfo', { w: VW, h: VH, s: state.secs, fps: state.fps, mb: Math.round(mb) })
+      : I18n.t('ab.needChrome');
+    if (VideoExport.supported() && (VW !== W || VH !== H)) info += I18n.t('ab.padded');
     $('videoInfo').textContent = err ? '' : info;
 
     updateLogoUI(W, H, err);
+    const isStatic = kindOf(state.style) === 'static';
+    document.querySelector(`input[name="kind"][value="${isStatic ? 'static' : 'animated'}"]`).checked = true;
+    $('speed').disabled = isStatic;
+    $('kindNote').textContent = isStatic ? I18n.t('ab.staticNote') : '';
+    $('kindNote').hidden = !isStatic;
     updateTextUI();
     markPalette();
     drawThumbs();
     try { history.replaceState(null, '', '#' + toHash()); } catch { /* ignore */ }
+    $('ssOpen').href = 'screensaver.html#' + toHash();
     $('otherTab').href = 'test-pattern.html#' + new URLSearchParams(state.cabOn
       ? { cabOn: 1, cabCols: state.cabCols, cabRows: state.cabRows, cabW: state.cabW, cabH: state.cabH }
       : { w: state.w, h: state.h, cabOn: 0 }).toString();
@@ -303,6 +335,12 @@
   $('controls').addEventListener('input', e => {
     const id = e.target.id;
     if (id.startsWith('logo') || id.startsWith('text')) return; // handled by their own sections
+    if (e.target.name === 'kind') {
+      // switching category picks that category's first style
+      if (kindOf(state.style) !== e.target.value) state.style = STYLES.find(s => s.kind === e.target.value).id;
+      changed();
+      return;
+    }
     if (e.target.closest('#colors')) {
       state.palette[Number(e.target.dataset.i)] = e.target.value;
     } else if (id === 'preset') {
@@ -332,7 +370,7 @@
   function updateLogoUI(W, H, err) {
     const has = !!logo;
     $('logoControls').hidden = !has;
-    $('logoDropText').textContent = has ? 'تغيير اللوجو (SVG أو PNG)' : 'اختار ملف SVG أو PNG، أو اسحبه هنا';
+    $('logoDropText').textContent = I18n.t(has ? 'ab.logoChange' : 'ab.logoPick');
     canvas.classList.toggle('has-logo', has || !!(state.text.title || state.text.sub));
     $('logoSizeOut').textContent = Math.round(state.logo.size * 100) + '%';
     document.querySelectorAll('#logoPos button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.a === state.logo.anchor)));
@@ -341,16 +379,16 @@
     let warn = '', short = '', severe = false;
     if (has && !err) {
       const r = Logo.rect(logo, state.logo, W, H);
-      $('logoPx').textContent = `هيتعرض بمقاس ${dim(r.w, r.h)}` +
-        (logo.kind === 'svg' ? ' · SVG (بيفضل حاد في أي مقاس)' : ` · الأصل ${dim(logo.natW, logo.natH)}`);
+      $('logoPx').textContent = I18n.t('ab.logoShown', { dim: dim(r.w, r.h) }) +
+        (logo.kind === 'svg' ? I18n.t('ab.logoSvgSharp') : I18n.t('ab.logoOrig', { dim: dim(logo.natW, logo.natH) }));
       const up = Logo.upscale(logo, state.logo, W, H);
       if (up > 1.05) {
         severe = up >= 2;
-        warn = `⚠ اللوجو صغير على الرزلوشن ده: الأصل ${dim(logo.natW, logo.natH)} وهيتكبّر \u2066${up.toFixed(1)}×\u2069 لـ ${dim(r.w, r.h)}، فهيبان مش حاد على الشاشة. ` +
-          `محتاج نسخة ارتفاعها \u2066${fmt(Math.ceil(r.h))} px\u2069 على الأقل، أو ملف SVG، أو صغّر الحجم.`;
-        short = `⚠ اللوجو هيتكبّر \u2066${up.toFixed(1)}×\u2069 ومش هيبقى حاد.`;
+        const x = `\u2066${up.toFixed(1)}×\u2069`;
+        warn = I18n.t('ab.logoSmall', { orig: dim(logo.natW, logo.natH), x, dim: dim(r.w, r.h), h: `\u2066${fmt(Math.ceil(r.h))} px\u2069` });
+        short = I18n.t('ab.logoSmallShort', { x });
       } else if (logo.kind === 'svg' && logo.hasRaster) {
-        warn = 'ملحوظة: ملف الـ SVG ده جواه صورة عادية (مش vector)، فالجزء ده ممكن مايبقاش حاد لو اتكبّر.';
+        warn = I18n.t('ab.logoSvgRaster');
       }
     }
     $('logoWarn').hidden = !warn;
@@ -366,12 +404,12 @@
     try {
       logo = await Logo.fromFile(file);
     } catch (e) {
-      status(e && e.message === 'type' ? 'الملف لازم يكون صورة SVG أو PNG.' : 'مقدرتش أقرا ملف اللوجو ده.', true);
+      status(I18n.t(e && e.message === 'type' ? 'ab.logoType' : 'ab.logoRead'), true);
       return;
     }
     $('logoThumb').src = logo.src;
     $('logoName').textContent = logo.name;
-    if (!Logo.store(logo)) status('اللوجو اشتغل، بس مش هيتحفظ للمرة الجاية (الملف كبير على تخزين المتصفح).');
+    if (!Logo.store(logo)) status(I18n.t('ab.logoNoStore'));
     else status('');
     changed();
   }
@@ -462,7 +500,13 @@
 
   // ---------------------------------------------------------------- event name
   function fillFonts() {
-    EventText.FONTS.forEach(f => $('textFont').add(new Option(f.name, f.id)));
+    if (!$('textFont').options.length) EventText.FONTS.forEach(f => $('textFont').add(new Option(f.name, f.id)));
+    ['logoAnim', 'textAnim'].forEach(id => {
+      const sel = $(id), keep = sel.value;
+      sel.innerHTML = '';
+      Anim.TYPES.forEach(a => sel.add(new Option(I18n.t(a.name), a.id)));
+      if (keep) sel.value = keep;
+    });
   }
 
   function updateTextUI() {
@@ -487,6 +531,8 @@
   $('textSize').addEventListener('input', e => { state.text.size = Number(e.target.value); changed(); });
   $('textMargin').addEventListener('input', e => { state.text.margin = Number(e.target.value); changed(); });
   $('textShadow').addEventListener('input', e => { state.text.shadow = e.target.checked; changed(); });
+  $('textAnim').addEventListener('input', e => { state.text.anim = e.target.value; changed(); });
+  $('logoAnim').addEventListener('input', e => { state.logo.anim = e.target.value; changed(); });
   $('textPos').addEventListener('click', e => {
     const b = e.target.closest('button[data-a]');
     if (!b) return;
@@ -505,15 +551,15 @@
 
   async function deliver(blob, name) {
     const r = await window.saveFile(blob, name);
-    if (r === 'saved') status(`اتحمّل: ${name} (${(blob.size / 1048576).toFixed(1)} MB)`);
-    else if (r === 'declined') status('التحميل اتلغى.');
-    else status('مقدرتش أحفظ الملف.', true);
+    if (r === 'saved') status(I18n.t('st.saved', { name, mb: (blob.size / 1048576).toFixed(1) }));
+    else if (r === 'declined') status(I18n.t('st.declined'));
+    else status(I18n.t('st.saveFailed'), true);
   }
 
   $('dlPng').addEventListener('click', async () => {
     const { W, H } = size();
     if (validate(W, H)) return;
-    status('بيتجهز…');
+    status(I18n.t('st.preparing'));
     const t = currentT();
     await EventText.ready(state.text);
     // let the status paint before the (possibly slow) full-res render
@@ -523,17 +569,17 @@
       try {
         renderFrame(c.getContext('2d', { alpha: false }), W, H, t, params());
       } catch (e) {
-        status('حصلت مشكلة في رسم الصورة: ' + e.message, true);
+        status(I18n.t('ab.drawErr', { msg: e.message }), true);
         return;
       }
       try {
         c.toBlob(blob => {
-          if (!blob) { status('المتصفح مقدرش يعمل الصورة دي — غالباً الرزلوشن كبير على الجهاز ده.', true); return; }
+          if (!blob) { status(I18n.t('st.tooBig'), true); return; }
           deliver(blob, `abstract_${state.style}_${W}x${H}.png`);
         }, 'image/png');
       } catch (e) {
         // a "tainted" canvas: some SVGs (e.g. with <foreignObject>) block export
-        status('المتصفح رفض يحفظ الصورة بسبب ملف اللوجو. جرّب نسخة PNG من اللوجو.', true);
+        status(I18n.t('ab.tainted'), true);
       }
     }, 30);
   });
@@ -558,23 +604,23 @@
           if (w !== W || h !== H) { c.fillStyle = '#000'; c.fillRect(0, 0, w, h); }
           c.save();
           c.beginPath(); c.rect(0, 0, W, H); c.clip();
-          renderFrame(c, W, H, t, p);
+          renderFrame(c, W, H, t, p, true);
           c.restore();
         },
         onProgress: f => {
           $('bar').style.width = (f * 100).toFixed(1) + '%';
           const el = (performance.now() - started) / 1000;
           const left = f > 0.02 ? Math.round(el / f - el) : null;
-          $('progressText').textContent = `${Math.round(f * 100)}%` + (left != null ? ` · باقي حوالي ${left} ثانية` : '');
+          $('progressText').textContent = `${Math.round(f * 100)}%` + (left != null ? I18n.t('ab.left', { n: left }) : '');
         },
       });
       const name = `abstract_${state.style}_${VW}x${VH}_${state.secs}s_${state.fps}fps.mp4`;
       await deliver(blob, name);
     } catch (e) {
-      if (e && e.name === 'AbortError') status('اتلغى.');
-      else if (e && e.message === 'size') status(`الجهاز ده مش قادر يعمل فيديو H.264 بمقاس ${VW}×${VH}. جرّب جهاز تاني أو قسّم الشاشة على أكتر من فيديو.`, true);
-      else if (e && e.message === 'unsupported') status('تحميل الفيديو محتاج Chrome أو Edge على الكمبيوتر.', true);
-      else status('حصلت مشكلة في عمل الفيديو: ' + (e && e.message ? e.message : e), true);
+      if (e && e.name === 'AbortError') status(I18n.t('ab.cancelled'));
+      else if (e && e.message === 'size') status(I18n.t('ab.vidSize', { w: VW, h: VH }), true);
+      else if (e && e.message === 'unsupported') status(I18n.t('ab.needChrome'), true);
+      else status(I18n.t('ab.vidErr', { msg: e && e.message ? e.message : e }), true);
     } finally {
       exporting = false;
       abort = null;
@@ -585,7 +631,37 @@
 
   $('cancel').addEventListener('click', () => { if (abort) abort.abort(); });
 
+  // ---------------------------------------------------------------- screensaver link
+  // Screensaver apps need a public address: use this site's address when it is
+  // served from the web, otherwise the published GitHub Pages site.
+  const PUBLIC_BASE = 'https://ghofransalem.github.io/led-test-pattern/';
+  function screensaverUrl() {
+    const h = location.hostname;
+    const base = /\.github\.io$/.test(h) || h === 'localhost' || h === '127.0.0.1'
+      ? location.href.split('#')[0].replace(/[^/]*$/, '')
+      : PUBLIC_BASE;
+    return base + 'screensaver.html#' + toHash();
+  }
+  $('ssCopy').addEventListener('click', async () => {
+    const url = screensaverUrl();
+    try {
+      await navigator.clipboard.writeText(url);
+      status(I18n.t('ss.copied'));
+    } catch {
+      status(I18n.t('tp.copyThis', { url }));
+    }
+  });
+
   // ---------------------------------------------------------------- init
+  I18n.apply();
+  I18n.onChange(() => {
+    fillPresets();
+    fillFonts();
+    $('play').textContent = I18n.t(playing ? 'ab.pause' : 'ab.play');
+    status('');
+    changed();
+  });
+  $('play').textContent = I18n.t('ab.pause');
   fillPresets();
   fillFonts();
   buildStyles();

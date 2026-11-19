@@ -2,18 +2,25 @@
 
 A browser tool that makes content for event LED screens at any resolution, including custom ones: abstract backgrounds as images and videos, plus test patterns. Everything runs in the browser, no server and no build step.
 
+## اللغة
+
+الموقع **بالإنجليزي افتراضيًا**، وفيه زرار "العربية" فوق في كل صفحة بيحوّل الموقع كله للعربي واتجاهه لليمين. المتصفح بيفتكر اختيارك، وتقدر كمان تفتح أي صفحة بـ `?lang=ar` أو `?lang=en`.
+
+كل النصوص موجودة في `i18n.js`.
+
 ## الصفحات
 
 | الصفحة | الملف | بتعمل إيه |
 |---|---|---|
-| **خلفيات Abstract** | `index.html` | صور PNG وفيديوهات MP4 بالرزلوشن بتاع الشاشة بالظبط |
+| **الصفحة الرئيسية** | `index.html` | تعريف بالموقع واختيار الأداة |
+| **خلفيات Abstract** | `abstract.html` | صور PNG وفيديوهات MP4 بالرزلوشن بتاع الشاشة بالظبط |
 | **صور اختبار** | `test-pattern.html` | Grid وكابينات مترقمة و Color bars وتدرجات، بالرزلوشن بتاع الشاشة |
 
 الرزلوشن بيتنقل معاك لما تروح من صفحة للتانية.
 
 ## التشغيل
 
-افتح `index.html` في **Chrome أو Edge**، أو ارفع الفولدر على أي استضافة static (GitHub Pages أو Cloudflare Pages أو Netlify).
+افتح `index.html` في **Chrome أو Edge** واختار الأداة، أو ارفع الفولدر على أي استضافة static (GitHub Pages أو Cloudflare Pages أو Netlify).
 
 لتشغيله محليًا بسيرفر:
 
@@ -23,7 +30,9 @@ python3 -m http.server 8000
 
 ## خلفيات Abstract
 
-- **الستايلات (6):** Gradient Blobs، و Waves، و Flow Lines، و Bokeh، و Low Poly، و Smooth Gradient.
+- **ستايلات متحركة (12):** Gradient Blobs، و Waves، و Aurora، و Flow Lines، و Bokeh، و Constellation، و Ripples، و Starfield، و Retro Grid، و Light Stripes، و Low Poly، و Smooth Gradient. كلها بتلف loop من غير قطع.
+- **ستايلات ثابتة (6):** Mesh Gradient، و Linear Gradient، و Spotlight، و Solid Color، و Halftone Dots، و Topographic. مش بتتحرك في الفيديو، بس اللوجو والنص ممكن يتحركوا عليها.
+- **preset "This screen":** بيحط رزلوشن الشاشة اللي فاتح عليها الموقع، عشان تعمل wallpaper أو صورة screensaver بالمقاس بالظبط.
 - **الألوان:** 8 باليتات جاهزة، وتقدر تعدل كل لون منهم بنفسك (أول لون هو الخلفية).
 - **شكل جديد 🎲:** بيغيّر التوزيع بنفس الستايل والألوان.
 - **الكثافة:** عدد العناصر في الصورة.
@@ -44,6 +53,18 @@ python3 -m http.server 8000
   - 4 خطوط: Cairo و Tajawal و Almarai (عربي)، و Montserrat (إنجليزي). السُمك عادي أو Bold أو Black.
   - تتحكم في اللون والحجم والمكان (9 أماكن، أو تسحب النص بالماوس)، والبعد عن الحافة، والظل.
   - النص بيصغر لوحده لو أطول من الشاشة، فعمره ما بيتقص.
+- **حركة اللوجو واسم الإيفنت في الفيديو:**
+  - كل واحد ليه اختيار لوحده: ظهور واختفاء تدريجي، أو طلوع من تحت، أو تكبير مع الظهور، أو طفو هادي، أو نبض.
+  - حركات الظهور بتدخل في أول الفيديو وتخرج في آخره، فالفيديو بيفضل يلف loop من غير قطع.
+  - لو الاتنين بيتحركوا، اسم الإيفنت بيظهر بعد اللوجو بلحظة.
+  - الصورة PNG بتطلع من غير حركة.
+- **Screensaver:**
+  - صفحة `screensaver.html` بتشغّل الخلفية live بملء الشاشة على أي كمبيوتر، بالرزلوشن بتاعه، ومن غير نهاية.
+  - من صفحة الخلفيات، زرار "Copy screensaver link" بيدّيك لينك بنفس الشكل بالظبط.
+  - **Windows:** في برنامج [Lively Wallpaper](https://github.com/rocksdanister/lively) (مجاني ومفتوح المصدر)، ضيف wallpaper بالّينك ده، وبعدين فعّل الـ screensaver من Settings ← Screensaver.
+  - **Mac:** في [WebViewScreenSaver](https://github.com/liquidx/webviewscreensaver) (مجاني ومفتوح المصدر)، ضيف اللينك من Options.
+  - **صورة ثابتة من غير أي برنامج:** حمّل PNG بمقاس الشاشة، وحطها في فولدر، واختاره في screensaver الصور اللي جوه النظام.
+  - اسم الإيفنت جوه اللينك، لكن اللوجو متخزن في المتصفح بس، فبرامج الـ screensaver مش هتعرضه.
 - **رابط بالإعدادات:** كل الإعدادات بتتحفظ في عنوان الصفحة، فتقدر تبعت اللينك لحد يفتح نفس الشكل بالظبط.
 
 ### حدود الفيديو
@@ -64,12 +85,16 @@ python3 -m http.server 8000
 ## هيكل الملفات
 
 ```
-index.html           صفحة الخلفيات
+index.html / home.js الصفحة الرئيسية
+screensaver.html/.js صفحة الـ screensaver (live بملء الشاشة)
+abstract.html        صفحة الخلفيات
 abstract.js          واجهة صفحة الخلفيات
 generators.js        رسم الستايلات (resolution-independent، loop-safe)
 video.js             تصدير MP4 (WebCodecs + mp4-muxer)
 logo.js              تحميل اللوجو ومكانه وتنبيه الجودة
 text.js              اسم الإيفنت (الخطوط والمكان والحجم)
+anim.js              حركة اللوجو والنص في الفيديو
+i18n.js              النصوص بالإنجليزي والعربي، وتبديل اللغة
 test-pattern.html    صفحة صور الاختبار
 app.js / pattern.js  واجهة ورسم صور الاختبار
 save.js              حفظ الملفات (ومتوافق كمان مع صفحات claude.ai)
@@ -81,4 +106,3 @@ vendor/mp4-muxer.js  مكتبة mp4-muxer 5.2.1 (MIT)
 
 - تصدير بصيغة HAP لـ Resolume، عن طريق سيرفر FFmpeg.
 - ستايلات أكتر.
-- حركة للنص واللوجو في الفيديو (fade-in مثلًا).

@@ -110,7 +110,7 @@
     if (!logo) return;
     const r = rect(logo, L, W, H);
     ctx.save();
-    ctx.globalAlpha = L.opacity;
+    ctx.globalAlpha *= L.opacity;
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(logo.img, r.x, r.y, r.w, r.h);

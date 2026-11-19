@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title data-i18n="ab.docTitle">LED Abstract Backgrounds</title>
+  <meta name="description" data-i18n-content="ab.desc" content="Abstract background images and videos for event screens at any resolution.">
+  <script src="i18n.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700;800&family=Cairo:wght@400;500;600;700;900&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Montserrat:wght@400;700;900&family=Tajawal:wght@400;700;900&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="Home" data-i18n-aria="nav.home">
+      <h1>LED Screen Content</h1>
+      <span class="aurora" aria-hidden="true"><i></i><i></i><i></i></span>
+    </a>
+    <nav class="tabs" aria-label="Sections" data-i18n-aria="nav.sections">
+      <a href="abstract.html" aria-current="page" data-i18n="nav.abstract">Backgrounds</a>
+      <a href="test-pattern.html" id="otherTab" data-i18n="nav.test">Test patterns</a>
+    </nav>
+    <button type="button" class="lang-toggle" data-lang-toggle data-i18n="lang.toggle" data-i18n-aria="lang.toggleAria" aria-label="Switch to Arabic">العربية</button>
+  </header>
+
+  <main class="layout">
+    <aside class="panel" id="controls">
+
+      <section>
+        <h2 data-i18n="res.title">Resolution</h2>
+        <div class="row">
+          <label><span data-i18n="res.w">Width (px)</span><input type="number" id="w" min="1" step="1" value="1920"></label>
+          <label><span data-i18n="res.h">Height (px)</span><input type="number" id="h" min="1" step="1" value="1080"></label>
+        </div>
+        <label><span data-i18n="res.presets">Presets</span><select id="preset"></select></label>
+        <label class="check"><input type="checkbox" id="cabOn"> <span data-i18n="res.cab">Calculate from cabinets</span></label>
+        <div id="cabFields" class="cab-fields" hidden>
+          <div class="row">
+            <label><span data-i18n="cab.cols">Columns</span><input type="number" id="cabCols" min="1" value="12"></label>
+            <label><span data-i18n="cab.rows">Rows</span><input type="number" id="cabRows" min="1" value="4"></label>
+          </div>
+          <div class="row">
+            <label><span data-i18n="cab.w">Cabinet width (px)</span><input type="number" id="cabW" min="1" value="128"></label>
+            <label><span data-i18n="cab.h">Cabinet height (px)</span><input type="number" id="cabH" min="1" value="128"></label>
+          </div>
+        </div>
+        <p class="meta" id="meta"></p>
+        <p class="warn" id="warn" hidden></p>
+      </section>
+
+      <section>
+        <h2 data-i18n="ab.style">Style</h2>
+        <div class="seg kind-seg" id="kindSeg" role="radiogroup" aria-label="Style type" data-i18n-aria="ab.kindAria">
+          <label><input type="radio" name="kind" value="animated" checked><span data-i18n="ab.kindAnimated">Animated</span></label>
+          <label><input type="radio" name="kind" value="static"><span data-i18n="ab.kindStatic">Static</span></label>
+        </div>
+        <div class="styles" id="styles"></div>
+        <p class="note" id="kindNote" hidden></p>
+      </section>
+
+      <section>
+        <h2 data-i18n="ab.colors">Colors</h2>
+        <div class="palettes" id="palettes"></div>
+        <div class="colors" id="colors" dir="ltr">
+          <input type="color" data-i="0" aria-label="Background color" data-i18n-aria="ab.colorBg">
+          <input type="color" data-i="1" aria-label="Color 1" data-i18n-aria="ab.color1">
+          <input type="color" data-i="2" aria-label="Color 2" data-i18n-aria="ab.color2">
+          <input type="color" data-i="3" aria-label="Color 3" data-i18n-aria="ab.color3">
+          <input type="color" data-i="4" aria-label="Color 4" data-i18n-aria="ab.color4">
+        </div>
+        <p class="note" data-i18n="ab.firstBg">The first color is the background.</p>
+      </section>
+
+      <section>
+        <h2 data-i18n="ab.shape">Shape</h2>
+        <button type="button" id="reseed" class="ghost wide" data-i18n="ab.reseed">🎲 New layout</button>
+        <label><span data-i18n="ab.density">Density</span>
+          <input type="range" id="density" min="0" max="1" step="0.05" value="0.5">
+        </label>
+        <label class="check"><input type="checkbox" id="grain" checked> <span data-i18n="ab.grain">Light grain (reduces banding on the screen)</span></label>
+      </section>
+
+      <section>
+        <h2 data-i18n="ab.logo">Company logo</h2>
+        <label class="drop" id="logoDrop">
+          <input type="file" id="logoFile" accept=".svg,.png,.webp,.jpg,.jpeg,image/svg+xml,image/png,image/webp,image/jpeg">
+          <span id="logoDropText">Choose an SVG or PNG file, or drop it here</span>
+        </label>
+        <div id="logoControls" hidden>
+          <div class="logo-head">
+            <img id="logoThumb" alt="">
+            <div class="grow">
+              <div id="logoName" class="logo-name"></div>
+              <div id="logoPx" class="note"></div>
+            </div>
+            <button type="button" id="logoRemove" class="ghost small" data-i18n="ab.remove">Remove</button>
+          </div>
+          <p class="warn" id="logoWarn" hidden></p>
+          <label><span data-i18n="ab.sizeOfH">Size (of screen height)</span> <output id="logoSizeOut"></output>
+            <input type="range" id="logoSize" min="0.03" max="1" step="0.01" value="0.25">
+          </label>
+          <div class="pos-wrap">
+            <div class="pos-grid" id="logoPos" dir="ltr" role="group" aria-label="Logo position" data-i18n-aria="ab.logoPos">
+              <button type="button" data-a="tl" aria-label="Top left" data-i18n-aria="pos.tl">↖</button>
+              <button type="button" data-a="t" aria-label="Top" data-i18n-aria="pos.t">↑</button>
+              <button type="button" data-a="tr" aria-label="Top right" data-i18n-aria="pos.tr">↗</button>
+              <button type="button" data-a="l" aria-label="Left" data-i18n-aria="pos.l">←</button>
+              <button type="button" data-a="c" aria-label="Center" data-i18n-aria="pos.c">●</button>
+              <button type="button" data-a="r" aria-label="Right" data-i18n-aria="pos.r">→</button>
+              <button type="button" data-a="bl" aria-label="Bottom left" data-i18n-aria="pos.bl">↙</button>
+              <button type="button" data-a="b" aria-label="Bottom" data-i18n-aria="pos.b">↓</button>
+              <button type="button" data-a="br" aria-label="Bottom right" data-i18n-aria="pos.br">↘</button>
+            </div>
+            <p class="note" data-i18n="ab.logoDragHint">Pick a position, or drag the logo on the preview.</p>
+          </div>
+          <label><span data-i18n="ab.margin">Distance from edge</span>
+            <input type="range" id="logoMargin" min="0" max="0.25" step="0.005" value="0.05">
+          </label>
+          <label><span data-i18n="ab.opacity">Opacity</span>
+            <input type="range" id="logoOpacity" min="0.1" max="1" step="0.05" value="1">
+          </label>
+          <label><span data-i18n="ab.motion">Motion in video</span><select id="logoAnim"></select></label>
+        </div>
+      </section>
+
+      <section>
+        <h2 data-i18n="ab.event">Event name</h2>
+        <label><span data-i18n="ab.mainText">Main text</span><input type="text" id="textTitle" maxlength="200" placeholder="e.g. Innovation Summit 2026" data-i18n-ph="ab.mainPh"></label>
+        <label><span data-i18n="ab.sub">Second line (optional)</span><input type="text" id="textSub" maxlength="200" placeholder="e.g. Cairo · 20 November" data-i18n-ph="ab.subPh"></label>
+        <div id="textOptions" hidden>
+          <div class="row">
+            <label><span data-i18n="ab.font">Font</span><select id="textFont"></select></label>
+            <label><span data-i18n="ab.weight">Weight</span>
+              <select id="textWeight">
+                <option value="400" data-i18n="ab.wRegular">Regular</option>
+                <option value="700" selected>Bold</option>
+                <option value="900">Black</option>
+              </select>
+            </label>
+          </div>
+          <label><span data-i18n="ab.sizeOfH">Size (of screen height)</span> <output id="textSizeOut"></output>
+            <input type="range" id="textSize" min="0.02" max="0.6" step="0.005" value="0.12">
+          </label>
+          <div class="pos-wrap">
+            <div class="pos-grid" id="textPos" dir="ltr" role="group" aria-label="Text position" data-i18n-aria="ab.textPos">
+              <button type="button" data-a="tl" aria-label="Top left" data-i18n-aria="pos.tl">↖</button>
+              <button type="button" data-a="t" aria-label="Top" data-i18n-aria="pos.t">↑</button>
+              <button type="button" data-a="tr" aria-label="Top right" data-i18n-aria="pos.tr">↗</button>
+              <button type="button" data-a="l" aria-label="Left" data-i18n-aria="pos.l">←</button>
+              <button type="button" data-a="c" aria-label="Center" data-i18n-aria="pos.c">●</button>
+              <button type="button" data-a="r" aria-label="Right" data-i18n-aria="pos.r">→</button>
+              <button type="button" data-a="bl" aria-label="Bottom left" data-i18n-aria="pos.bl">↙</button>
+              <button type="button" data-a="b" aria-label="Bottom" data-i18n-aria="pos.b">↓</button>
+              <button type="button" data-a="br" aria-label="Bottom right" data-i18n-aria="pos.br">↘</button>
+            </div>
+            <p class="note" data-i18n="ab.textDragHint">Pick a position, or drag the text on the preview.</p>
+          </div>
+          <label><span data-i18n="ab.margin">Distance from edge</span>
+            <input type="range" id="textMargin" min="0" max="0.25" step="0.005" value="0.05">
+          </label>
+          <div class="row text-row">
+            <label class="inline"><span data-i18n="ab.color">Color</span> <input type="color" id="textColor" value="#ffffff"></label>
+            <label class="check"><input type="checkbox" id="textShadow" checked> <span data-i18n="ab.shadow">Soft shadow</span></label>
+          </div>
+          <label><span data-i18n="ab.motion">Motion in video</span><select id="textAnim"></select></label>
+          <p class="note" data-i18n="ab.motionNote">Motion shows in the video and in the preview while it plays. PNG images are exported without motion.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2 data-i18n="ab.motionTitle">Motion (for video)</h2>
+        <label><span data-i18n="ab.speed">Speed</span>
+          <input type="range" id="speed" min="1" max="4" step="1" value="1">
+        </label>
+        <div class="row">
+          <label><span data-i18n="ab.duration">Duration</span>
+            <select id="secs">
+              <option value="10" data-i18n="ab.s10">10 seconds</option>
+              <option value="15" data-i18n="ab.s15">15 seconds</option>
+              <option value="30" data-i18n="ab.s30" selected>30 seconds</option>
+              <option value="60" data-i18n="ab.s60">60 seconds</option>
+            </select>
+          </label>
+          <label>FPS
+            <select id="fps">
+              <option>25</option>
+              <option selected>30</option>
+              <option>50</option>
+              <option>60</option>
+            </select>
+          </label>
+        </div>
+        <p class="note" data-i18n="ab.loopNote">The video loops seamlessly: the last frame flows into the first.</p>
+      </section>
+
+      <section>
+        <h2 data-i18n="ss.title">Screensaver</h2>
+        <p class="note" data-i18n="ss.intro">Play this background live and full screen on any computer, at its own resolution, with no file to download.</p>
+        <div class="row btns ss-btns">
+          <a class="pill pill-ghost pill-sm" id="ssOpen" href="screensaver.html" target="_blank" rel="noopener" data-i18n="ss.open">Open full screen</a>
+          <button type="button" class="ghost" id="ssCopy" data-i18n="ss.copy">Copy screensaver link</button>
+        </div>
+        <details class="howto">
+          <summary data-i18n="ss.how">Set it as the screensaver</summary>
+          <h3>Windows</h3>
+          <ol>
+            <li><span data-i18n="ss.win1">Install Lively Wallpaper (free, open source):</span> <a href="https://github.com/rocksdanister/lively" target="_blank" rel="noopener">github.com/rocksdanister/lively</a></li>
+            <li data-i18n="ss.win2">In Lively, add a wallpaper and paste the screensaver link.</li>
+            <li data-i18n="ss.win3">Open Lively's Settings → Screensaver and follow the steps.</li>
+          </ol>
+          <h3>Mac</h3>
+          <ol>
+            <li><span data-i18n="ss.mac1">Install WebViewScreenSaver (free, open source):</span> <a href="https://github.com/liquidx/webviewscreensaver" target="_blank" rel="noopener">github.com/liquidx/webviewscreensaver</a></li>
+            <li data-i18n="ss.mac2">Open System Settings → Screen Saver and choose WebViewScreenSaver.</li>
+            <li data-i18n="ss.mac3">Open its Options and add the screensaver link.</li>
+          </ol>
+          <h3 data-i18n="ss.stillTitle">Still image, no extra app</h3>
+          <p data-i18n="ss.still">Download a PNG at your screen size (preset “This screen”), put it in a folder, and choose that folder in the built-in Photos screensaver on Windows or a photo screensaver on Mac.</p>
+          <p class="note" data-i18n="ss.logoNote">The event name is part of the link. The logo is saved in this browser only, so screensaver apps won't show it.</p>
+        </details>
+      </section>
+
+      <section class="actions">
+        <button type="button" id="dlPng" class="primary" data-i18n="ab.dlPng">Download PNG image</button>
+        <button type="button" id="dlMp4" class="primary alt" data-i18n="ab.dlMp4">Download MP4 video</button>
+        <p class="warn" id="logoWarnShort" hidden></p>
+        <p class="note" id="videoInfo"></p>
+        <div class="progress" id="progress" hidden>
+          <div class="bar"><span id="bar"></span></div>
+          <div class="row">
+            <span id="progressText" class="grow"></span>
+            <button type="button" id="cancel" class="ghost" data-i18n="ab.cancel">Cancel</button>
+          </div>
+        </div>
+        <p class="status" id="status" role="status"></p>
+      </section>
+    </aside>
+
+    <section class="stage">
+      <div class="canvas-wrap" id="wrap">
+        <canvas id="canvas" dir="ltr"></canvas>
+      </div>
+      <div class="stage-bar">
+        <button type="button" id="play" class="ghost">⏸ Pause motion</button>
+        <span class="hint" id="hint" data-i18n="ab.hint">The preview is scaled down. Files are made at full resolution.</span>
+      </div>
+    </section>
+  </main>
+
+  <script src="save.js"></script>
+  <script src="vendor/mp4-muxer.js"></script>
+  <script src="generators.js"></script>
+  <script src="logo.js"></script>
+  <script src="text.js"></script>
+  <script src="anim.js"></script>
+  <script src="video.js"></script>
+  <script src="abstract.js"></script>
+</body>
+</html>

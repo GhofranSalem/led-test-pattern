@@ -30,7 +30,7 @@ python3 -m http.server 8000
 
 ## خلفيات Abstract
 
-- **ستايلات متحركة (12):** Gradient Blobs، و Waves، و Aurora، و Flow Lines، و Bokeh، و Constellation، و Ripples، و Starfield، و Retro Grid، و Light Stripes، و Low Poly، و Smooth Gradient. كلها بتلف loop من غير قطع.
+- **ستايلات متحركة (16):** Gradient Blobs، و Waves، و Aurora، و Flow Lines، و Bokeh، و Constellation، و Ripples، و Starfield، و Retro Grid، و Light Stripes، و Waterfall، و Light Rain، و Code Rain، و Meteor Shower، و Low Poly، و Smooth Gradient. كلها بتلف loop من غير قطع.
 - **ستايلات ثابتة (6):** Mesh Gradient، و Linear Gradient، و Spotlight، و Solid Color، و Halftone Dots، و Topographic. مش بتتحرك في الفيديو، بس اللوجو والنص ممكن يتحركوا عليها.
 - **preset "This screen":** بيحط رزلوشن الشاشة اللي فاتح عليها الموقع، عشان تعمل wallpaper أو صورة screensaver بالمقاس بالظبط.
 - **الألوان:** 8 باليتات جاهزة، وتقدر تعدل كل لون منهم بنفسك (أول لون هو الخلفية).

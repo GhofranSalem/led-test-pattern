@@ -740,6 +740,170 @@
     }
   }
 
+  // ---------------------------------------------------------------- tile meter
+  // Bands of square tiles; a colour fill sweeps through each band like a level
+  // meter, its front tiles growing in one by one.
+  function tilebars(ctx, W, H, t, p) {
+    const { bg, cols, r } = prep(p);
+    const m = Math.min(W, H);
+    ctx.fillStyle = rgba(bg, 1);
+    ctx.fillRect(0, 0, W, H);
+    const s = m / (9 + p.density * 10);
+    const ncol = Math.ceil(W / s) + 1, x0 = (W - ncol * s) / 2;
+    const nb = 1 + Math.round(p.density * 2);
+    const bands = [];
+    for (let b = 0; b < nb; b++) bands.push(2 + Math.floor(r() * 2));
+    const gap = s * 1.4;
+    const total = bands.reduce((a, n) => a + n * s, 0) + gap * (nb - 1);
+    let y = (H - total) / 2;
+    const lw = Math.max(1, s * 0.04);
+    bands.forEach((rows, b) => {
+      const dir = r() < 0.5 ? 1 : -1, ph = r(), len = Math.round(ncol * (0.5 + r() * 0.4));
+      const c0 = cols[b % cols.length], c1 = cols[(b + 1) % cols.length];
+      const head = frac(ph + t * p.speed) * (ncol + len) - len;
+      // empty band and its grid
+      ctx.fillStyle = rgba(mix(bg, WHITE, 0.07), 1);
+      ctx.fillRect(0, y, W, rows * s);
+      for (let ci = 0; ci < ncol; ci++) {
+        const u = (dir > 0 ? ci : ncol - 1 - ci) - head;
+        const f = clamp01(Math.min(u + 1, len - u));
+        if (f <= 0) continue;
+        const pos = clamp01(u / len), hot = Math.sin(Math.PI * pos);
+        const c = mix(mix(c0, c1, pos), WHITE, 0.55 * hot * hot);
+        for (let ri = 0; ri < rows; ri++) {
+          const x = x0 + ci * s, yy = y + ri * s, q = s * (1 - f) / 2;
+          ctx.fillStyle = rgba(c, 1);
+          ctx.fillRect(x + q, yy + q, s - 2 * q, s - 2 * q);
+          // a darker half on each tile gives the meter its faceted look
+          ctx.fillStyle = rgba(mix(c, bg, 0.35), 0.5);
+          ctx.beginPath();
+          ctx.moveTo(x + s - q, yy + q); ctx.lineTo(x + s - q, yy + s - q); ctx.lineTo(x + q, yy + s - q);
+          ctx.closePath(); ctx.fill();
+        }
+      }
+      ctx.strokeStyle = rgba(bg, 0.85);
+      ctx.lineWidth = lw;
+      ctx.beginPath();
+      for (let ci = 0; ci <= ncol; ci++) { ctx.moveTo(x0 + ci * s, y); ctx.lineTo(x0 + ci * s, y + rows * s); }
+      for (let ri = 0; ri <= rows; ri++) { ctx.moveTo(0, y + ri * s); ctx.lineTo(W, y + ri * s); }
+      ctx.stroke();
+      ctx.strokeStyle = rgba(mix(bg, WHITE, 0.45), 0.8);
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.moveTo(0, y + rows * s); ctx.lineTo(W, y + rows * s); ctx.stroke();
+      y += rows * s + gap;
+    });
+  }
+
+  // ---------------------------------------------------------------- dial grid
+  // A grid of gauges; a wave runs across them, swinging the needles and
+  // lighting the faces.
+  function dials(ctx, W, H, t, p) {
+    const { bg, cols, r } = prep(p);
+    const m = Math.min(W, H);
+    ctx.fillStyle = rgba(bg, 1);
+    ctx.fillRect(0, 0, W, H);
+    const g = m / (5 + p.density * 7), R = g * 0.44;
+    const rows = Math.ceil(H / g) + 1, ncol = Math.ceil(W / g) + 1;
+    const x0 = (W - (ncol - 1) * g) / 2, y0 = (H - (rows - 1) * g) / 2;
+    const base = r() * TAU, fx = 0.25 + r() * 0.3, fy = 0.15 + r() * 0.3;
+    const lx = r() < 0.5 ? 1 : -1;
+    const a = TAU * t * p.speed;
+    const ring = mix(cols[1], WHITE, 0.75), face = mix(bg, WHITE, 0.1), lit = mix(cols[0], WHITE, 0.5);
+    const pat = hatchPattern(ctx, g / 22, rgba(mix(bg, WHITE, 0.3), 1));
+    ctx.lineCap = 'round';
+    for (let ri = 0; ri < rows; ri++) {
+      for (let ci = 0; ci < ncol; ci++) {
+        const x = x0 + ci * g, y = y0 + ri * g;
+        const wear = r();
+        const ang = base + 1.3 * Math.sin(a - ci * fx - ri * fy);
+        const L = Math.pow(0.5 + 0.5 * Math.sin(a + lx * ci * 0.3 + ri * 0.2), 4);
+        ctx.fillStyle = rgba(mix(face, lit, 0.55 * L), 1);
+        ctx.beginPath(); ctx.arc(x, y, R, 0, TAU); ctx.fill();
+        ctx.globalAlpha = 0.4 + 0.4 * wear;
+        ctx.fillStyle = pat; ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = rgba(ring, 0.9);
+        ctx.lineWidth = g * 0.035;
+        ctx.stroke();
+        ctx.lineWidth = g * 0.03;
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(ang) * R * 0.8, y + Math.sin(ang) * R * 0.8); ctx.stroke();
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------- slash bars
+  // Diagonal lanes of bars that slide along and swell and thin in a wave.
+  function slashes(ctx, W, H, t, p) {
+    const { bg, cols, r } = prep(p);
+    const m = Math.min(W, H), D = Math.hypot(W, H);
+    ctx.fillStyle = rgba(bg, 1);
+    ctx.fillRect(0, 0, W, H);
+    const sp = m / (3 + p.density * 5);                    // lane spacing
+    const pitch = sp * (1.4 + r() * 0.8);                  // bar + gap along a lane
+    const ang = -Math.PI * (0.2 + r() * 0.1) * (r() < 0.5 ? 1 : -1);
+    const cyc = 1 + Math.floor(r() * 2);
+    ctx.save();
+    ctx.translate(W / 2, H / 2);
+    ctx.rotate(ang);
+    const lanes = Math.ceil(D / sp / 2) + 1;
+    for (let j = -lanes; j <= lanes; j++) {
+      const dir = j % 2 ? 1 : -1;
+      const shift = frac(t * p.speed + j * 0.37) * pitch * dir;
+      const c = mix(cols[((j % cols.length) + cols.length) % cols.length], WHITE, 0.55);
+      for (let x = -D / 2 - pitch * 2; x < D / 2 + pitch; x += pitch) {
+        const bx = x + shift;
+        const wv = 0.5 + 0.5 * Math.sin(TAU * (t * p.speed * cyc) - (bx / D) * TAU * 1.5 - j * 0.6);
+        const th = sp * (0.04 + 0.42 * wv * wv);
+        const g = ctx.createLinearGradient(bx, 0, bx + pitch * 0.8, 0);
+        g.addColorStop(0, rgba(c, 0.35 + 0.65 * wv));
+        g.addColorStop(1, rgba(mix(c, WHITE, 0.6), 0.5 + 0.5 * wv));
+        ctx.fillStyle = g;
+        ctx.fillRect(bx, j * sp - th / 2, pitch * 0.8, th);
+      }
+    }
+    ctx.restore();
+  }
+
+  // ---------------------------------------------------------------- spectrum lines
+  // Rows of thin vertical lines; a band of colour and a bright hot spot travel
+  // through them, each row at its own pace.
+  function spectrum(ctx, W, H, t, p) {
+    const { bg, cols, r } = prep(p);
+    const m = Math.min(W, H);
+    ctx.fillStyle = rgba(bg, 1);
+    ctx.fillRect(0, 0, W, H);
+    const step = m * (0.012 + (1 - p.density) * 0.018);
+    const n = Math.ceil(W / step) + 1;
+    const lw = Math.max(1, step * 0.4);
+    const rowsDef = [[0.22, 0.47], [0.49, 0.53], [0.55, 0.8]];
+    ctx.globalCompositeOperation = 'lighter';
+    rowsDef.forEach(([a, b], i) => {
+      const dir = i === 1 ? -1 : 1, k = p.speed * (i === 1 ? 2 : 1), off = r();
+      const hotAt = frac(r() + t * k * dir);
+      const mid = i === 1;
+      for (let li = 0; li < n; li++) {
+        const x = li * step, fx = x / W;
+        const f = frac(fx * 0.8 + off - t * p.speed * dir);
+        const c = along(cols, 1 - Math.abs(2 * f - 1));
+        let d = Math.abs(fx - hotAt); d = Math.min(d, 1 - d);
+        const hot = Math.exp(-d * d / (mid ? 0.004 : 0.02));
+        const e = 0.4 + 0.6 * hot;
+        ctx.fillStyle = rgba(mix(c, WHITE, (mid ? 0.7 : 0.4) * hot), e);
+        ctx.fillRect(x - lw / 2, H * a, lw, H * (b - a));
+      }
+      // soft glow around the hot spot (drawn three times so it wraps at the edges)
+      const gy = H * (a + b) / 2, gr = H * (b - a) * (mid ? 3 : 1.2);
+      for (const sx of [-1, 0, 1]) {
+        const gx = (hotAt + sx) * W;
+        const g = ctx.createRadialGradient(gx, gy, 0, gx, gy, gr);
+        g.addColorStop(0, rgba(mix(along(cols, 0.5), WHITE, 0.5), mid ? 0.35 : 0.18));
+        g.addColorStop(1, rgba(bg, 0));
+        ctx.fillStyle = g;
+        ctx.fillRect(gx - gr, gy - gr, gr * 2, gr * 2);
+      }
+    });
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
   // ================================================================ static styles (ignore t)
   /* Static styles take two more controls besides density and the seed:
        p.scale  0..1  size of the shapes (0.5 = default)  → sc in 0.5..2
@@ -1295,6 +1459,10 @@
     { id: 'coderain', name: 'Code Rain', draw: coderain, kind: 'animated' },
     { id: 'meteors', name: 'Meteor Shower', draw: meteors, kind: 'animated' },
     { id: 'dotrows', name: 'Dot Rows', draw: dotrows, kind: 'animated' },
+    { id: 'tilebars', name: 'Tile Meter', draw: tilebars, kind: 'animated' },
+    { id: 'dials', name: 'Dial Grid', draw: dials, kind: 'animated' },
+    { id: 'slashes', name: 'Slash Bars', draw: slashes, kind: 'animated' },
+    { id: 'spectrum', name: 'Spectrum Lines', draw: spectrum, kind: 'animated' },
     { id: 'lowpoly', name: 'Low Poly', draw: lowpoly, kind: 'animated' },
     { id: 'gradient', name: 'Smooth Gradient', draw: gradient, kind: 'animated' },
     { id: 'mesh', name: 'Mesh Gradient', draw: mesh, kind: 'static' },

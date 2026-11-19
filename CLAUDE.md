@@ -15,7 +15,7 @@ The owner writes in Egyptian Arabic; reply in Arabic. They operate LED walls at 
 | `text.js` | Event-name text overlay (fonts: Cairo, Tajawal, Almarai, Montserrat). |
 | `anim.js` | Logo/text motion in videos (fade, slide, zoom, float, pulse). |
 | `backdrop.js` | Glass panel behind the logo and the event name: mode off / box / full-width band, blur, darken, shine, fade (none, all, t, b, l, r, tb, lr) + fade size. Trailing fields of the `logo` and `txt` hash values via `Backdrop.serialize/parse` (older blur/dim-only links still parse); call `draw` inside `Anim.apply` before drawing the element. |
-| `video.js` | MP4 (H.264) export via WebCodecs + `vendor/mp4-muxer.js` 5.2.1 (MIT). Chrome/Edge only. |
+| `video.js` | MP4 (H.264) export via WebCodecs + `vendor/mp4-muxer.js` 5.2.1 (MIT). Chrome/Edge only. Quality `vq` (hash key) = std / high / max → 0.25 / 0.5 / 1 bits per pixel per frame, 15–240 Mbps; thin-line styles smear below ~0.5. |
 | `screensaver.html`, `screensaver.js` | Full-screen live player driven by the same URL hash; used with Lively Wallpaper (Windows) or WebViewScreenSaver (macOS). |
 | `test-pattern.html`, `app.js`, `pattern.js` | Test-pattern tool: cabinets on by default, grid, bars, full fields, sending-card port chains drawn on the image. |
 | `cabinets.js` | Shared "Calculate from cabinets" section for both tools: cabinet types by pixel pitch (+ user types in localStorage `ledsc.cabTypes`), screen size in meters → cabinets, pixels, area, weight, power, ports; `fileTag()` for filenames; `portChains()`. Hash keys `panel`, `cabKg`, `cabWatt` travel between the two pages. |

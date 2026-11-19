@@ -14,7 +14,7 @@ The owner writes in Egyptian Arabic; reply in Arabic. They operate LED walls at 
 | `logo.js` | Logo load (SVG/PNG), layout rect, draw, upscale warning; stored in localStorage. |
 | `text.js` | Event-name text overlay (fonts: Cairo, Tajawal, Almarai, Montserrat). |
 | `anim.js` | Logo/text motion in videos (fade, slide, zoom, float, pulse). |
-| `backdrop.js` | Frosted blur / darken panel behind the logo and the event name (`blur`, `dim` 0..1, trailing fields of the `logo` and `txt` hash values); call it inside `Anim.apply` before drawing the element. |
+| `backdrop.js` | Glass panel behind the logo and the event name: mode off / box / full-width band, blur, darken, shine, fade (none, all, t, b, l, r, tb, lr) + fade size. Trailing fields of the `logo` and `txt` hash values via `Backdrop.serialize/parse` (older blur/dim-only links still parse); call `draw` inside `Anim.apply` before drawing the element. |
 | `video.js` | MP4 (H.264) export via WebCodecs + `vendor/mp4-muxer.js` 5.2.1 (MIT). Chrome/Edge only. |
 | `screensaver.html`, `screensaver.js` | Full-screen live player driven by the same URL hash; used with Lively Wallpaper (Windows) or WebViewScreenSaver (macOS). |
 | `test-pattern.html`, `app.js`, `pattern.js` | Test-pattern tool: cabinets on by default, grid, bars, full fields, sending-card port chains drawn on the image. |

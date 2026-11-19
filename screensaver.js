@@ -14,8 +14,8 @@
   // ---------------------------------------------------------------- settings
   const S = {
     style: 'blobs', palette: PALETTES[0].colors.slice(), seed: 20261119, density: 0.5, grain: true, speed: 1, secs: 30,
-    logo: { size: 0.25, anchor: 'br', margin: 0.05, cx: 0.5, cy: 0.5, opacity: 1, anim: 'none', blur: 0, dim: 0 },
-    text: { title: '', sub: '', font: 'Cairo', weight: 700, color: '#ffffff', size: 0.12, anchor: 'c', margin: 0.05, cx: 0.5, cy: 0.5, shadow: true, anim: 'none', blur: 0, dim: 0 },
+    logo: { size: 0.25, anchor: 'br', margin: 0.05, cx: 0.5, cy: 0.5, opacity: 1, anim: 'none', bd: { ...Backdrop.DEFAULTS } },
+    text: { title: '', sub: '', font: 'Cairo', weight: 700, color: '#ffffff', size: 0.12, anchor: 'c', margin: 0.05, cx: 0.5, cy: 0.5, shadow: true, anim: 'none', bd: { ...Backdrop.DEFAULTS } },
   };
 
   (function parse() {
@@ -31,7 +31,7 @@
     const n = (v, lo, hi, d) => (v !== undefined && v !== '' && isFinite(+v) ? Math.min(hi, Math.max(lo, +v)) : d);
     const anims = Anim.TYPES.map(a => a.id);
     if (p.has('logo')) {
-      const [size, anchor, margin, cx, cy, opacity, anim, blur, dim] = p.get('logo').split('~');
+      const [size, anchor, margin, cx, cy, opacity, anim, ...bd] = p.get('logo').split('~');
       const L = S.logo;
       L.size = n(size, 0.03, 1, L.size);
       if (/^(tl|t|tr|l|c|r|bl|b|br|custom)$/.test(anchor)) L.anchor = anchor;
@@ -39,13 +39,13 @@
       L.cx = n(cx, 0, 1, L.cx); L.cy = n(cy, 0, 1, L.cy);
       L.opacity = n(opacity, 0.1, 1, L.opacity);
       if (anims.includes(anim)) L.anim = anim;
-      L.blur = n(blur, 0, 1, 0); L.dim = n(dim, 0, 1, 0);
+      L.bd = Backdrop.parse(bd);
     }
     const T = S.text;
     if (p.has('title')) T.title = p.get('title').slice(0, 200);
     if (p.has('sub')) T.sub = p.get('sub').slice(0, 200);
     if (p.has('txt')) {
-      const [font, weight, color, sz, anchor, margin, cx, cy, shadow, anim, blur, dim] = p.get('txt').split('~');
+      const [font, weight, color, sz, anchor, margin, cx, cy, shadow, anim, ...bd] = p.get('txt').split('~');
       if (EventText.FONTS.some(f => f.id === font)) T.font = font;
       if (['400', '700', '900'].includes(weight)) T.weight = +weight;
       if (/^[0-9a-f]{6}$/i.test(color || '')) T.color = '#' + color.toLowerCase();
@@ -55,7 +55,7 @@
       T.cx = n(cx, 0, 1, T.cx); T.cy = n(cy, 0, 1, T.cy);
       T.shadow = shadow !== '0';
       if (anims.includes(anim)) T.anim = anim;
-      T.blur = n(blur, 0, 1, 0); T.dim = n(dim, 0, 1, 0);
+      T.bd = Backdrop.parse(bd);
     }
   })();
 
@@ -89,7 +89,7 @@
     if (logo) {
       const r = Logo.rect(logo, S.logo, W, H);
       Anim.apply(ctx, Anim.at(S.logo.anim, t, S.secs, 0), r.x + r.w / 2, r.y + r.h / 2, H, () => {
-        Backdrop.draw(ctx, r, S.logo, W, H);
+        Backdrop.draw(ctx, r, S.logo.bd, W, H);
         Logo.draw(ctx, logo, S.logo, W, H);
       });
     }
@@ -97,7 +97,7 @@
     if (L) {
       const delay = logo && S.logo.anim !== 'none' ? 0.3 : 0;
       Anim.apply(ctx, Anim.at(S.text.anim, t, S.secs, delay), L.x + L.w / 2, L.y + L.h / 2, H, () => {
-        Backdrop.draw(ctx, L, S.text, W, H);
+        Backdrop.draw(ctx, L, S.text.bd, W, H);
         EventText.draw(ctx, S.text, W, H);
       });
     }

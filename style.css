@@ -181,6 +181,7 @@ input.tiny { display: inline-block; width: 72px; margin: 0; padding: 4px 8px; }
 .summary b { display: block; font-family: var(--font-mono); font-weight: 500; font-size: 14px; line-height: 20px; color: var(--color-off-white); direction: ltr; text-align: start; overflow-wrap: anywhere; }
 .summary .physical { grid-column: 1 / -1; margin: 0; white-space: pre-line; }
 [dir=rtl] .summary b { text-align: right; }
+.bd-opts { border-inline-start: 1px solid var(--color-smoke); padding-inline-start: 12px; margin-bottom: 12px; }
 .summary .err { color: var(--color-bone-white); font-weight: 600; }
 
 /* segmented choice (test-pattern backgrounds) */

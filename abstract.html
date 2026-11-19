@@ -157,12 +157,33 @@
           <label><span data-i18n="ab.opacity">Opacity</span>
             <input type="range" id="logoOpacity" min="0.1" max="1" step="0.05" value="1">
           </label>
-          <label><span data-i18n="bd.blur">Blur behind</span>
-            <input type="range" id="logoBlur" min="0" max="1" step="0.05" value="0">
+          <label><span data-i18n="bd.panel">Glass panel behind</span>
+            <select id="logoBd">
+              <option value="off" data-i18n="bd.off">Off</option>
+              <option value="box" data-i18n="bd.box">Around it</option>
+              <option value="band" data-i18n="bd.band">Full-width band</option>
+            </select>
           </label>
-          <label><span data-i18n="bd.dim">Darken behind</span>
-            <input type="range" id="logoDim" min="0" max="1" step="0.05" value="0">
-          </label>
+          <div id="logoBdOpts" class="bd-opts" hidden>
+            <label><span data-i18n="bd.blur">Blur</span><input type="range" id="logoBlur" min="0" max="1" step="0.05"></label>
+            <label><span data-i18n="bd.dim">Darken</span><input type="range" id="logoDim" min="0" max="1" step="0.05"></label>
+            <label><span data-i18n="bd.shine">Glass shine</span><input type="range" id="logoShine" min="0" max="1" step="0.05"></label>
+            <div class="row">
+              <label><span data-i18n="bd.fade">Fade out</span>
+                <select id="logoFade">
+                  <option value="none" data-i18n="bd.fNone">No fade</option>
+                  <option value="all" data-i18n="bd.fAll">All edges</option>
+                  <option value="t" data-i18n="bd.fT">Top</option>
+                  <option value="b" data-i18n="bd.fB">Bottom</option>
+                  <option value="l" data-i18n="bd.fL">Left</option>
+                  <option value="r" data-i18n="bd.fR">Right</option>
+                  <option value="tb" data-i18n="bd.fTB">Top and bottom</option>
+                  <option value="lr" data-i18n="bd.fLR">Left and right</option>
+                </select>
+              </label>
+              <label><span data-i18n="bd.fadeSize">Fade size</span><input type="range" id="logoFadeSize" min="0" max="1" step="0.05"></label>
+            </div>
+          </div>
           <label><span data-i18n="ab.motion">Motion in video</span><select id="logoAnim"></select></label>
         </div>
       </section>
@@ -206,12 +227,33 @@
             <label class="inline"><span data-i18n="ab.color">Color</span> <input type="color" id="textColor" value="#ffffff"></label>
             <label class="check"><input type="checkbox" id="textShadow" checked> <span data-i18n="ab.shadow">Soft shadow</span></label>
           </div>
-          <label><span data-i18n="bd.blur">Blur behind</span>
-            <input type="range" id="textBlur" min="0" max="1" step="0.05" value="0">
+          <label><span data-i18n="bd.panel">Glass panel behind</span>
+            <select id="textBd">
+              <option value="off" data-i18n="bd.off">Off</option>
+              <option value="box" data-i18n="bd.box">Around it</option>
+              <option value="band" data-i18n="bd.band">Full-width band</option>
+            </select>
           </label>
-          <label><span data-i18n="bd.dim">Darken behind</span>
-            <input type="range" id="textDim" min="0" max="1" step="0.05" value="0">
-          </label>
+          <div id="textBdOpts" class="bd-opts" hidden>
+            <label><span data-i18n="bd.blur">Blur</span><input type="range" id="textBlur" min="0" max="1" step="0.05"></label>
+            <label><span data-i18n="bd.dim">Darken</span><input type="range" id="textDim" min="0" max="1" step="0.05"></label>
+            <label><span data-i18n="bd.shine">Glass shine</span><input type="range" id="textShine" min="0" max="1" step="0.05"></label>
+            <div class="row">
+              <label><span data-i18n="bd.fade">Fade out</span>
+                <select id="textFade">
+                  <option value="none" data-i18n="bd.fNone">No fade</option>
+                  <option value="all" data-i18n="bd.fAll">All edges</option>
+                  <option value="t" data-i18n="bd.fT">Top</option>
+                  <option value="b" data-i18n="bd.fB">Bottom</option>
+                  <option value="l" data-i18n="bd.fL">Left</option>
+                  <option value="r" data-i18n="bd.fR">Right</option>
+                  <option value="tb" data-i18n="bd.fTB">Top and bottom</option>
+                  <option value="lr" data-i18n="bd.fLR">Left and right</option>
+                </select>
+              </label>
+              <label><span data-i18n="bd.fadeSize">Fade size</span><input type="range" id="textFadeSize" min="0" max="1" step="0.05"></label>
+            </div>
+          </div>
           <label><span data-i18n="ab.motion">Motion in video</span><select id="textAnim"></select></label>
           <p class="note" data-i18n="ab.motionNote">Motion shows in the video and in the preview while it plays. PNG images are exported without motion.</p>
         </div>

@@ -279,3 +279,5 @@ output { color: var(--text); direction: ltr; unicode-bidi: isolate; }
 #canvas.logo-hover { cursor: grab; }
 #canvas.logo-drag { cursor: grabbing; }
 #canvas.has-logo { touch-action: none; }
+.text-row { align-items: center; justify-content: space-between; }
+.text-row label { flex: none; margin: 0; }

@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>LED Abstract Backgrounds</title>
   <meta name="description" content="خلفيات Abstract صور وفيديو لشاشات الإيفنتات بأي رزلوشن">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700;800&family=Cairo:wght@400;700;900&family=Montserrat:wght@400;700;900&family=Tajawal:wght@400;700;900&display=swap">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -111,6 +114,48 @@
       </section>
 
       <section>
+        <h2>اسم الإيفنت</h2>
+        <label>النص الرئيسي<input type="text" id="textTitle" maxlength="200" placeholder="مثال: ملتقى الابتكار 2026"></label>
+        <label>سطر تاني (اختياري)<input type="text" id="textSub" maxlength="200" placeholder="مثال: القاهرة · 20 نوفمبر"></label>
+        <div id="textOptions" hidden>
+          <div class="row">
+            <label>الخط<select id="textFont"></select></label>
+            <label>السُمك
+              <select id="textWeight">
+                <option value="400">عادي</option>
+                <option value="700" selected>Bold</option>
+                <option value="900">Black</option>
+              </select>
+            </label>
+          </div>
+          <label>الحجم (من ارتفاع الشاشة) <output id="textSizeOut"></output>
+            <input type="range" id="textSize" min="0.02" max="0.6" step="0.005" value="0.12">
+          </label>
+          <div class="pos-wrap">
+            <div class="pos-grid" id="textPos" dir="ltr" role="group" aria-label="مكان النص">
+              <button type="button" data-a="tl" aria-label="فوق شمال">↖</button>
+              <button type="button" data-a="t" aria-label="فوق">↑</button>
+              <button type="button" data-a="tr" aria-label="فوق يمين">↗</button>
+              <button type="button" data-a="l" aria-label="شمال">←</button>
+              <button type="button" data-a="c" aria-label="النص">●</button>
+              <button type="button" data-a="r" aria-label="يمين">→</button>
+              <button type="button" data-a="bl" aria-label="تحت شمال">↙</button>
+              <button type="button" data-a="b" aria-label="تحت">↓</button>
+              <button type="button" data-a="br" aria-label="تحت يمين">↘</button>
+            </div>
+            <p class="note">اختار مكان، أو اسحب النص بالماوس على المعاينة.</p>
+          </div>
+          <label>البعد عن الحافة
+            <input type="range" id="textMargin" min="0" max="0.25" step="0.005" value="0.05">
+          </label>
+          <div class="row text-row">
+            <label class="inline">اللون <input type="color" id="textColor" value="#ffffff"></label>
+            <label class="check"><input type="checkbox" id="textShadow" checked> ظل خفيف</label>
+          </div>
+        </div>
+      </section>
+
+      <section>
         <h2>الحركة (للفيديو)</h2>
         <label>السرعة
           <input type="range" id="speed" min="1" max="4" step="1" value="1">
@@ -167,6 +212,7 @@
   <script src="vendor/mp4-muxer.js"></script>
   <script src="generators.js"></script>
   <script src="logo.js"></script>
+  <script src="text.js"></script>
   <script src="video.js"></script>
   <script src="abstract.js"></script>
 </body>

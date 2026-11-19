@@ -31,6 +31,7 @@
     secs: 30,
     fps: 30,
     logo: { size: 0.25, anchor: 'br', margin: 0.05, cx: 0.5, cy: 0.5, opacity: 1 },
+    text: { title: '', sub: '', font: 'Cairo', weight: 700, color: '#ffffff', size: 0.12, anchor: 'c', margin: 0.05, cx: 0.5, cy: 0.5, shadow: true },
   };
   let logo = null; // loaded logo image (see logo.js)
 
@@ -48,6 +49,7 @@
   function renderFrame(c, W, H, t, p) {
     render(c, W, H, t, p);
     Logo.draw(c, logo, state.logo, W, H);
+    EventText.draw(c, state.text, W, H);
   }
 
   function validate(W, H) {
@@ -69,6 +71,10 @@
     p.set('pal', state.palette.map(c => c.slice(1)).join('-'));
     const L = state.logo;
     p.set('logo', [L.size, L.anchor, L.margin, +L.cx.toFixed(4), +L.cy.toFixed(4), L.opacity].join('~'));
+    const T = state.text;
+    if (T.title) p.set('title', T.title);
+    if (T.sub) p.set('sub', T.sub);
+    p.set('txt', [T.font, T.weight, T.color.slice(1), T.size, T.anchor, T.margin, +T.cx.toFixed(4), +T.cy.toFixed(4), T.shadow ? 1 : 0].join('~'));
     return p.toString();
   }
 
@@ -90,6 +96,21 @@
       L.cx = n(cx, 0, 1, L.cx); L.cy = n(cy, 0, 1, L.cy);
       L.opacity = n(opacity, 0.1, 1, L.opacity);
     }
+    const T = state.text;
+    if (p.has('title')) T.title = p.get('title').slice(0, 200);
+    if (p.has('sub')) T.sub = p.get('sub').slice(0, 200);
+    if (p.has('txt')) {
+      const [font, weight, color, sz, anchor, margin, cx, cy, shadow] = p.get('txt').split('~');
+      const n = (v, lo, hi, d) => (isFinite(+v) && v !== '' ? Math.min(hi, Math.max(lo, +v)) : d);
+      if (EventText.FONTS.some(f => f.id === font)) T.font = font;
+      if (['400', '700', '900'].includes(weight)) T.weight = Number(weight);
+      if (/^[0-9a-f]{6}$/i.test(color)) T.color = '#' + color.toLowerCase();
+      T.size = n(sz, 0.02, 0.6, T.size);
+      if (/^(tl|t|tr|l|c|r|bl|b|br|custom)$/.test(anchor)) T.anchor = anchor;
+      T.margin = n(margin, 0, 0.25, T.margin);
+      T.cx = n(cx, 0, 1, T.cx); T.cy = n(cy, 0, 1, T.cy);
+      T.shadow = shadow !== '0';
+    }
   }
 
   // ---------------------------------------------------------------- form <-> state
@@ -103,6 +124,15 @@
     $('logoSize').value = state.logo.size;
     $('logoMargin').value = state.logo.margin;
     $('logoOpacity').value = state.logo.opacity;
+    const T = state.text;
+    $('textTitle').value = T.title;
+    $('textSub').value = T.sub;
+    $('textFont').value = T.font;
+    $('textWeight').value = String(T.weight);
+    $('textColor').value = T.color;
+    $('textSize').value = T.size;
+    $('textMargin').value = T.margin;
+    $('textShadow').checked = T.shadow;
   }
 
   function formToState() {
@@ -257,6 +287,7 @@
     $('videoInfo').textContent = err ? '' : info;
 
     updateLogoUI(W, H, err);
+    updateTextUI();
     markPalette();
     drawThumbs();
     try { history.replaceState(null, '', '#' + toHash()); } catch { /* ignore */ }
@@ -271,7 +302,7 @@
 
   $('controls').addEventListener('input', e => {
     const id = e.target.id;
-    if (id.startsWith('logo')) return; // handled by the logo section
+    if (id.startsWith('logo') || id.startsWith('text')) return; // handled by their own sections
     if (e.target.closest('#colors')) {
       state.palette[Number(e.target.dataset.i)] = e.target.value;
     } else if (id === 'preset') {
@@ -302,7 +333,7 @@
     const has = !!logo;
     $('logoControls').hidden = !has;
     $('logoDropText').textContent = has ? 'تغيير اللوجو (SVG أو PNG)' : 'اختار ملف SVG أو PNG، أو اسحبه هنا';
-    canvas.classList.toggle('has-logo', has);
+    canvas.classList.toggle('has-logo', has || !!(state.text.title || state.text.sub));
     $('logoSizeOut').textContent = Math.round(state.logo.size * 100) + '%';
     document.querySelectorAll('#logoPos button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.a === state.logo.anchor)));
     $('logoMargin').disabled = state.logo.anchor === 'custom' || state.logo.anchor === 'c';
@@ -374,39 +405,44 @@
     changed();
   });
 
-  // drag the logo on the preview
+  // drag the logo or the event name on the preview
   let drag = null;
   function toFrame(e) {
     const r = canvas.getBoundingClientRect();
     return { u: (e.clientX - r.left) / r.width, v: (e.clientY - r.top) / r.height };
   }
-  function hitLogo(u, v) {
-    if (!logo) return null;
+  // text is drawn on top, so it wins when both overlap
+  function hitAny(u, v) {
     const { W, H } = size();
-    const r = Logo.rect(logo, state.logo, W, H);
     const x = u * W, y = v * H;
-    return x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h ? r : null;
+    const inside = r => r && x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
+    const t = EventText.layout(state.text, W, H);
+    if (inside(t)) return { target: state.text, r: t };
+    const l = logo ? Logo.rect(logo, state.logo, W, H) : null;
+    if (inside(l)) return { target: state.logo, r: l };
+    return null;
   }
   canvas.addEventListener('pointerdown', e => {
     const { u, v } = toFrame(e);
-    const r = hitLogo(u, v);
-    if (!r) return;
+    const hit = hitAny(u, v);
+    if (!hit) return;
+    const { r, target } = hit;
     const { W, H } = size();
-    drag = { du: u - (r.x + r.w / 2) / W, dv: v - (r.y + r.h / 2) / H, hw: r.w / 2 / W, hh: r.h / 2 / H };
+    drag = { target, du: u - (r.x + r.w / 2) / W, dv: v - (r.y + r.h / 2) / H, hw: r.w / 2 / W, hh: r.h / 2 / H };
     canvas.setPointerCapture(e.pointerId);
     canvas.classList.add('logo-drag');
     e.preventDefault();
   });
   canvas.addEventListener('pointermove', e => {
     const { u, v } = toFrame(e);
-    if (!drag) { canvas.classList.toggle('logo-hover', !!hitLogo(u, v)); return; }
+    if (!drag) { canvas.classList.toggle('logo-hover', !!hitAny(u, v)); return; }
     let cx = Math.min(1 - drag.hw, Math.max(drag.hw, u - drag.du));
     let cy = Math.min(1 - drag.hh, Math.max(drag.hh, v - drag.dv));
     if (drag.hw * 2 >= 1) cx = 0.5;
     if (drag.hh * 2 >= 1) cy = 0.5;
     if (Math.abs(cx - 0.5) < 0.012) cx = 0.5; // snap to the centre lines
     if (Math.abs(cy - 0.5) < 0.012) cy = 0.5;
-    Object.assign(state.logo, { anchor: 'custom', cx, cy });
+    Object.assign(drag.target, { anchor: 'custom', cx, cy });
     changed();
   });
   const endDrag = () => { drag = null; canvas.classList.remove('logo-drag'); };
@@ -424,6 +460,40 @@
     } catch { Logo.store(null); }
   }
 
+  // ---------------------------------------------------------------- event name
+  function fillFonts() {
+    EventText.FONTS.forEach(f => $('textFont').add(new Option(f.name, f.id)));
+  }
+
+  function updateTextUI() {
+    const T = state.text;
+    $('textSizeOut').textContent = Math.round(T.size * 100) + '%';
+    document.querySelectorAll('#textPos button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.a === T.anchor)));
+    $('textMargin').disabled = T.anchor === 'custom' || T.anchor === 'c';
+    $('textOptions').hidden = !(T.title || T.sub);
+  }
+
+  // redraw once the web font has arrived, so the preview never sticks on a fallback font
+  function textChanged() {
+    changed();
+    EventText.ready(state.text).then(() => { if (!exporting) changed(); });
+  }
+
+  $('textTitle').addEventListener('input', e => { state.text.title = e.target.value; textChanged(); });
+  $('textSub').addEventListener('input', e => { state.text.sub = e.target.value; textChanged(); });
+  $('textFont').addEventListener('input', e => { state.text.font = e.target.value; textChanged(); });
+  $('textWeight').addEventListener('input', e => { state.text.weight = Number(e.target.value); textChanged(); });
+  $('textColor').addEventListener('input', e => { state.text.color = e.target.value; changed(); });
+  $('textSize').addEventListener('input', e => { state.text.size = Number(e.target.value); changed(); });
+  $('textMargin').addEventListener('input', e => { state.text.margin = Number(e.target.value); changed(); });
+  $('textShadow').addEventListener('input', e => { state.text.shadow = e.target.checked; changed(); });
+  $('textPos').addEventListener('click', e => {
+    const b = e.target.closest('button[data-a]');
+    if (!b) return;
+    state.text.anchor = b.dataset.a;
+    changed();
+  });
+
   // ---------------------------------------------------------------- export
   let exporting = false;
   let abort = null;
@@ -440,11 +510,12 @@
     else status('مقدرتش أحفظ الملف.', true);
   }
 
-  $('dlPng').addEventListener('click', () => {
+  $('dlPng').addEventListener('click', async () => {
     const { W, H } = size();
     if (validate(W, H)) return;
     status('بيتجهز…');
     const t = currentT();
+    await EventText.ready(state.text);
     // let the status paint before the (possibly slow) full-res render
     setTimeout(() => {
       const c = document.createElement('canvas');
@@ -473,6 +544,7 @@
     const { VW, VH } = videoSize(W, H);
     const p = params();
     exporting = true;
+    await EventText.ready(state.text);
     abort = new AbortController();
     changed();
     $('progress').hidden = false;
@@ -515,11 +587,13 @@
 
   // ---------------------------------------------------------------- init
   fillPresets();
+  fillFonts();
   buildStyles();
   buildPalettes();
   if (location.hash.length > 1) fromHash(location.hash.slice(1));
   stateToForm();
   changed();
   restoreLogo();
+  EventText.ready(state.text).then(() => changed());
   requestAnimationFrame(loop);
 })();

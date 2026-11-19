@@ -63,6 +63,7 @@
     }
     const pn = panelById(s.panel);
     if (pn && s.cabOn) {
+      s.cabMmW = pn[4]; s.cabMmH = pn[5];
       s.mmW = s.cabCols * pn[4];
       s.mmH = s.cabRows * pn[5];
       s.panelInfo = `${pn[2]} · ${pn[4]}×${pn[5]} mm  ·  ${(s.mmW / 1000).toFixed(2)} × ${(s.mmH / 1000).toFixed(2)} m`;
@@ -132,9 +133,25 @@
     sel.value = keep;
   }
 
+  // Typing the screen size in meters picks the nearest whole number of cabinets.
+  function fromMeters(id) {
+    const pn = panelById($('panel').value);
+    const m = parseFloat($(id).value);
+    if (!pn || !(m > 0)) return;
+    const wide = id === 'scrW';
+    const n = Math.max(1, Math.round(m * 1000 / (wide ? pn[4] : pn[5])));
+    $(wide ? 'cabCols' : 'cabRows').value = n;
+  }
+  const asked = {}; // meters the user typed, to tell them when it was rounded
+  const fmtM = mm => String(+(mm / 1000).toFixed(3));
+
   $('panel').addEventListener('change', e => {
     const pn = panelById(e.target.value);
-    if (pn) applyState({ cabOn: true, cabW: pn[6], cabH: pn[7] });
+    if (pn) {
+      applyState({ cabOn: true, cabW: pn[6], cabH: pn[7] });
+      // keep the screen size the user typed, recount the cabinets for the new panel
+      fromMeters('scrW'); fromMeters('scrH');
+    }
     $('preset').value = '';
     $('deletePreset').hidden = true;
     update();
@@ -161,6 +178,7 @@
     const v = e.target.value;
     $('deletePreset').hidden = !v.startsWith('s:');
     if (!v) return;
+    delete asked.scrW; delete asked.scrH;
     if (v.startsWith('b:')) {
       const [w, h] = v.slice(2).split('x').map(Number);
       applyState({ w, h, cabOn: false, panel: '' });
@@ -221,14 +239,7 @@
     $('meta').textContent = s.w > 0 && s.h > 0
       ? `${TestPattern.aspect(s.w, s.h)}  ·  ${(s.w * s.h / 1e6).toFixed(2)} MP`
       : '';
-    $('physical').hidden = !s.mmW;
-    if (s.mmW) {
-      const d = Math.hypot(s.mmW, s.mmH);
-      $('physical').textContent = I18n.t('panel.size', {
-        w: (s.mmW / 1000).toFixed(2), h: (s.mmH / 1000).toFixed(2),
-        d: `${(d / 1000).toFixed(2)} m / ${(d / 25.4).toFixed(0)}"`,
-      });
-    }
+    renderSummary(s);
 
     try { history.replaceState(null, '', '#' + toQuery(s)); } catch { /* file:// in some browsers */ }
     // carry the resolution over to the other page
@@ -239,6 +250,48 @@
     if (v.error) return;
     clearTimeout(timer);
     timer = setTimeout(() => render(s), s.w * s.h > 8e6 ? 250 : 60);
+  }
+
+  function renderSummary(s) {
+    const box = $('summary');
+    const hasPanel = !!s.mmW;
+    $('scrW').disabled = $('scrH').disabled = !hasPanel;
+    if (!hasPanel) { $('scrW').value = ''; $('scrH').value = ''; }
+    $('scrNote').hidden = hasPanel;
+    $('scrNote').textContent = hasPanel ? '' : I18n.t('scr.needPanel');
+    box.hidden = !s.cabOn || s.w < 1 || s.h < 1;
+    if (box.hidden) return;
+
+    const typing = document.activeElement && /^scr[WH]$/.test(document.activeElement.id);
+    if (hasPanel && !typing) { $('scrW').value = fmtM(s.mmW); $('scrH').value = fmtM(s.mmH); }
+
+    const items = [
+      [I18n.t('sum.cabinets'), I18n.t('sum.cabVal', { n: s.cabCols * s.cabRows, c: s.cabCols, r: s.cabRows })],
+      [I18n.t('sum.pixels'), `${s.w} × ${s.h} px`],
+    ];
+    if (hasPanel) {
+      items.push([I18n.t('sum.size'), `${(s.mmW / 1000).toFixed(2)} × ${(s.mmH / 1000).toFixed(2)} m`]);
+      items.push([I18n.t('sum.area'), `${(s.mmW * s.mmH / 1e6).toFixed(2)} m²`]);
+    }
+    box.innerHTML = '';
+    items.forEach(([k, v]) => {
+      const d = document.createElement('div');
+      const a = document.createElement('span'); a.textContent = k;
+      const b = document.createElement('b'); b.textContent = v;
+      d.append(a, b); box.appendChild(d);
+    });
+    if (hasPanel) {
+      const notes = [];
+      if ((asked.scrW > 0 && Math.abs(asked.scrW * 1000 - s.mmW) > 1) || (asked.scrH > 0 && Math.abs(asked.scrH * 1000 - s.mmH) > 1)) {
+        notes.push(I18n.t('scr.rounded', { w: (s.mmW / 1000).toFixed(2), h: (s.mmH / 1000).toFixed(2) }));
+      }
+      const dg = Math.hypot(s.mmW, s.mmH);
+      notes.push(I18n.t('panel.size', { d: `${(dg / 1000).toFixed(2)} m / ${(dg / 25.4).toFixed(0)}"` }));
+      const p = document.createElement('p');
+      p.className = 'physical';
+      p.textContent = notes.join('\n');
+      box.appendChild(p);
+    }
   }
 
   function render(s) {
@@ -308,9 +361,13 @@
   document.getElementById('controls').addEventListener('input', e => {
     if (e.target.id === 'preset' || e.target.id === 'presetName' || e.target.id === 'panel') return;
     if (e.target.id === 'cabW' || e.target.id === 'cabH') $('panel').value = '';
+    if (e.target.id === 'scrW' || e.target.id === 'scrH') { asked[e.target.id] = parseFloat(e.target.value); fromMeters(e.target.id); }
+    if (/^cab(Cols|Rows|W|H|On)$/.test(e.target.id)) { delete asked.scrW; delete asked.scrH; }
     if (e.target.id === 'w' || e.target.id === 'h') { $('preset').value = ''; $('deletePreset').hidden = true; }
     update();
   });
+
+  ['scrW', 'scrH'].forEach(id => $(id).addEventListener('blur', () => update()));
 
   I18n.apply();
   I18n.onChange(() => {
@@ -323,6 +380,10 @@
   });
   fillPresets();
   fillPanels();
+  $('panel').value = 'p2.6'; // default: P2.6 500×500 cabinets (matches the default 192 px fields)
   if (location.hash.length > 1) applyState(fromQuery(location.hash.slice(1)));
+  // a link or preset without a matching panel keeps its own cabinet pixels
+  const pn = panelById($('panel').value);
+  if (pn && (Number($('cabW').value) !== pn[6] || Number($('cabH').value) !== pn[7])) $('panel').value = '';
   update();
 })();

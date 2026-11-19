@@ -49,13 +49,39 @@
     ctx.closePath();
   }
 
-  // The canvas blurred: drawn small with a small blur, then scaled back up.
-  // Cheap enough for every video frame, and the same look at any resolution.
-  function blurred(src, W, H, radius, shine) {
+  // The canvas blurred, cheap enough for every video frame and the same look at
+  // any resolution. Thin moving lines (Flow Lines, Light Rain…) shimmer if the
+  // canvas is shrunk in one jump, because a big jump skips most pixels and each
+  // frame picks different ones. So it is halved step by step (every step
+  // averages 2×2 pixels), blurred at a size where the blur is still several
+  // pixels wide, then scaled back up smoothly.
+  const steps = [];
+  function stepCanvas(i, w, h) {
+    if (!steps[i]) { const c = document.createElement('canvas'); steps[i] = { c, x: c.getContext('2d') }; }
+    const s = steps[i];
+    if (s.c.width !== w || s.c.height !== h) { s.c.width = w; s.c.height = h; }
+    s.x.setTransform(1, 0, 0, 1, 0, 0);
+    s.x.filter = 'none';
+    s.x.globalAlpha = 1;
+    s.x.globalCompositeOperation = 'copy';
+    s.x.imageSmoothingEnabled = true;
+    s.x.imageSmoothingQuality = 'high';
+    return s;
+  }
+  // Only the part of the canvas at (rx, ry, rw, rh) is blurred.
+  function blurred(src, rx, ry, rw, rh, radius, shine) {
     if (!tmp) { tmp = document.createElement('canvas'); tctx = tmp.getContext('2d'); }
     const hasFilter = typeof tctx.filter === 'string';
-    const k = Math.max(1, Math.min(32, hasFilter ? radius / 3 : radius / 1.5));
-    const sw = Math.max(1, Math.round(W / k)), sh = Math.max(1, Math.round(H / k));
+    // keep the blur at least ~6 px wide on the small canvas so scaling up stays smooth
+    const k = Math.max(1, Math.min(16, hasFilter ? radius / 6 : radius / 2));
+    const sw = Math.max(1, Math.round(rw / k)), sh = Math.max(1, Math.round(rh / k));
+    let cur = src, cx = rx, cy = ry, cw = rw, ch = rh, i = 0;
+    while (cw / 2 >= sw * 1.0001 && ch / 2 >= sh * 1.0001) {
+      const nw = Math.max(sw, Math.round(cw / 2)), nh = Math.max(sh, Math.round(ch / 2));
+      const s = stepCanvas(i++ % 2, nw, nh);
+      s.x.drawImage(cur, cx, cy, cw, ch, 0, 0, nw, nh);
+      cur = s.c; cx = cy = 0; cw = nw; ch = nh;
+    }
     if (tmp.width !== sw || tmp.height !== sh) { tmp.width = sw; tmp.height = sh; }
     tctx.save();
     tctx.clearRect(0, 0, sw, sh);
@@ -63,9 +89,29 @@
     tctx.imageSmoothingQuality = 'high';
     // glass makes what's behind it a little richer; older Safari has no filter and gets the downscale only
     if (hasFilter) tctx.filter = `blur(${(radius / k).toFixed(2)}px) saturate(${(1 + 0.5 * shine).toFixed(2)})`;
-    tctx.drawImage(src, 0, 0, W, H, 0, 0, sw, sh);
+    tctx.drawImage(cur, cx, cy, cw, ch, 0, 0, sw, sh);
     tctx.restore();
     return tmp;
+  }
+
+  // The background's grain is wiped out by the blur, so the smooth dark glass
+  // bands in 8 bits, and H.264 turns the bands into crawling blotches on the
+  // wall. A faint fixed noise (same every frame, tied to the screen) breaks them up.
+  let noise = null;
+  function noisePattern(L) {
+    if (!noise) {
+      noise = document.createElement('canvas');
+      noise.width = noise.height = 128;
+      const c = noise.getContext('2d'), img = c.createImageData(128, 128);
+      let x = 98765;
+      for (let i = 0; i < img.data.length; i += 4) {
+        x ^= x << 13; x ^= x >>> 17; x ^= x << 5;
+        img.data[i] = img.data[i + 1] = img.data[i + 2] = (x >>> 0) % 256;
+        img.data[i + 3] = 255;
+      }
+      c.putImageData(img, 0, 0);
+    }
+    return L.createPattern(noise, 'repeat');
   }
 
   function fadeMask(L, w, h, fade, size) {
@@ -115,12 +161,16 @@
     roundRect(L, 0, 0, w, h, r);
     L.clip();
     if (blur > 0) {
-      const img = blurred(ctx.canvas, W, H, blur * m * 0.04, shine);
+      // blur just the panel's area, plus a margin so its edges blur like the rest
+      const radius = blur * m * 0.04, mg = Math.ceil(radius * 3);
+      const rx = Math.max(0, x0 - mg), ry = Math.max(0, y0 - mg);
+      const rw = Math.min(W, x1 + mg) - rx, rh = Math.min(H, y1 + mg) - ry;
+      const img = blurred(ctx.canvas, rx, ry, rw, rh, radius, shine);
       // a slight magnification about the panel centre reads as a glass lens
       const lens = 1 + 0.04 * shine;
       L.imageSmoothingEnabled = true;
       L.imageSmoothingQuality = 'high';
-      L.drawImage(img, 0, 0, img.width, img.height, w / 2 + (-x0 - w / 2) * lens, h / 2 + (-y0 - h / 2) * lens, W * lens, H * lens);
+      L.drawImage(img, 0, 0, img.width, img.height, w / 2 + (rx - x0 - w / 2) * lens, h / 2 + (ry - y0 - h / 2) * lens, rw * lens, rh * lens);
     }
     if (dim > 0) { L.fillStyle = `rgba(0,0,0,${(dim * 0.7).toFixed(3)})`; L.fillRect(0, 0, w, h); }
     if (shine > 0) {
@@ -132,6 +182,14 @@
       top.addColorStop(1, 'rgba(255,255,255,0)');
       L.fillStyle = top;
       L.fillRect(0, 0, w, h);
+    }
+    if (blur > 0) {
+      const pat = noisePattern(L);
+      if (pat.setTransform) pat.setTransform(new DOMMatrix([1, 0, 0, 1, -x0, -y0]));
+      L.globalAlpha = 0.025;
+      L.fillStyle = pat;
+      L.fillRect(0, 0, w, h);
+      L.globalAlpha = 1;
     }
     // rim light: bright on the top-left and bottom-right edges (inner half only, it's clipped)
     const rim = L.createLinearGradient(0, 0, w, h);

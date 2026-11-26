@@ -194,6 +194,7 @@
       ? { cabOn: 1, cabCols: s.cabCols, cabRows: s.cabRows, cabW: s.cabW, cabH: s.cabH, panel: s.panel, cabKg: s.cabKg, cabWatt: s.cabWatt }
       : { w: s.w, h: s.h, cabOn: 0 }).toString();
 
+    queueSave();
     if (v.error) return;
     clearTimeout(timer);
     timer = setTimeout(() => render(s), s.w * s.h > 8e6 ? 250 : 60);
@@ -264,10 +265,272 @@
 
   // ---------- wiring ----------
   document.getElementById('controls').addEventListener('input', e => {
-    if (e.target.id === 'preset' || e.target.id === 'presetName' || e.target.closest('#cabForm')) return;
+    if (e.target.id === 'preset' || e.target.id === 'presetName' || e.target.closest('#cabForm') || e.target.closest('#project')) return;
     if (['w', 'h', 'panel', 'scrW', 'scrH', 'cabCols', 'cabRows', 'cabW', 'cabH'].includes(e.target.id)) { $('preset').value = ''; $('deletePreset').hidden = true; }
     update();
   });
+
+  // ---------- project: several named screens ----------
+  /* The form always edits the selected screen: every change is written back to it
+     (debounced). Without a project the page works exactly as before. */
+  let project = Project.load();
+  let saveTimer = null;
+
+  function pjStatus(msg, isErr) {
+    const el = $('pjMsg');
+    el.textContent = msg || '';
+    el.classList.toggle('err', !!isErr);
+  }
+  function snapshot() {
+    const s = readState();
+    const keep = {};
+    allKeys.forEach(k => { keep[k] = s[k]; });
+    return keep;
+  }
+  function typeSnap(st) {
+    const t = st.cabOn && Cabinets.byId(st.panel);
+    return t && t.pxW === st.cabW && t.pxH === st.cabH
+      ? { name: t.name, mmW: t.mmW, mmH: t.mmH, pxW: t.pxW, pxH: t.pxH } : null;
+  }
+  const selected = () => (project ? project.screens.find(x => x.id === project.sel) : null);
+
+  // Read the stored project again before each write, so changes made on the report page
+  // (open in another tab) are kept.
+  function commit(fn) {
+    const p = Project.load() || project;
+    if (!p) return false;
+    if (project) p.sel = project.sel;
+    fn(p);
+    project = p;
+    if (!Project.save(p)) { pjStatus(I18n.t('tp.storeFail'), true); return false; }
+    return true;
+  }
+  function flush() {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+    if (!selected()) return;
+    const st = snapshot();
+    commit(p => {
+      const sc = p.screens.find(x => x.id === p.sel);
+      if (sc) { sc.state = st; sc.type = typeSnap(st); }
+    });
+    renderList();
+  }
+  function queueSave() {
+    if (!selected()) return;
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(flush, 250);
+  }
+
+  function screenRes(sc) {
+    const st = sc.state || {};
+    const on = !(st.cabOn === false);
+    const w = on ? st.cabCols * st.cabW : st.w, h = on ? st.cabRows * st.cabH : st.h;
+    return `${w}×${h}`;
+  }
+
+  function renderList() {
+    const on = !!project;
+    $('pjNone').hidden = on;
+    $('pjOn').hidden = !on;
+    if (!on) return;
+    if (document.activeElement !== $('pjName')) $('pjName').value = project.name;
+    const list = $('pjList');
+    list.innerHTML = '';
+    project.screens.forEach((sc, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'pj-item';
+      b.dataset.id = sc.id;
+      b.setAttribute('aria-pressed', String(sc.id === project.sel));
+      const n = document.createElement('span'); n.className = 'pj-n'; n.textContent = String(i + 1);
+      const nm = document.createElement('span'); nm.className = 'pj-nm'; nm.textContent = sc.name || I18n.t('pj.screenN', { n: i + 1 });
+      const r = document.createElement('span'); r.className = 'pj-res'; r.textContent = screenRes(sc);
+      b.append(n, nm, r);
+      list.appendChild(b);
+    });
+    if (!project.screens.length) {
+      const p = document.createElement('p');
+      p.className = 'note pj-empty';
+      p.textContent = I18n.t('pj.empty');
+      list.appendChild(p);
+    }
+    $('pjCount').textContent = I18n.t('pj.count', { n: project.screens.length });
+    const sc = selected();
+    const idx = sc ? project.screens.indexOf(sc) : -1;
+    $('pjScreen').disabled = $('pjDup').disabled = $('pjDel').disabled = !sc;
+    $('pjUp').disabled = idx < 1;
+    $('pjDown').disabled = idx < 0 || idx >= project.screens.length - 1;
+    if (document.activeElement !== $('pjScreen')) $('pjScreen').value = sc ? sc.name : '';
+  }
+
+  function openScreen(sc) {
+    if (!sc) return;
+    applyExternal(sc.state);
+    cab.resetAsked();
+    $('preset').value = '';
+    $('deletePreset').hidden = true;
+    update();
+  }
+
+  function startProject() {
+    const s = readState();
+    const p = Project.create(s.event || I18n.t('pj.untitled'));
+    const sc = Project.newScreen(s.screen || I18n.t('pj.screenN', { n: 1 }), snapshot(), typeSnap(s));
+    p.screens.push(sc);
+    p.sel = sc.id;
+    project = p;
+    if (!Project.save(p)) { pjStatus(I18n.t('tp.storeFail'), true); return false; }
+    renderList();
+    return true;
+  }
+
+  $('pjStart').addEventListener('click', () => {
+    if (startProject()) { pjStatus(I18n.t('pj.started')); $('pjName').focus(); }
+  });
+
+  $('pjName').addEventListener('input', () => {
+    commit(p => { p.name = $('pjName').value.slice(0, 120); });
+  });
+  $('pjScreen').addEventListener('input', () => {
+    commit(p => {
+      const sc = p.screens.find(x => x.id === p.sel);
+      if (sc) sc.name = $('pjScreen').value.slice(0, 80);
+    });
+    renderList();
+  });
+
+  $('pjList').addEventListener('click', e => {
+    const b = e.target.closest('.pj-item');
+    if (!b || b.dataset.id === project.sel) return;
+    flush();
+    project.sel = b.dataset.id;
+    commit(() => {});
+    renderList();
+    openScreen(selected());
+    pjStatus('');
+  });
+
+  $('pjAdd').addEventListener('click', () => {
+    flush();
+    // a new screen starts from the page defaults, with the current cabinet type and data settings
+    const cur = snapshot();
+    const st = { ...DEFAULT_STATE };
+    ['cabOn', 'panel', 'cabW', 'cabH', 'cabKg', 'cabWatt', 'portPx', 'ports', 'event'].forEach(k => { st[k] = cur[k]; });
+    st.screen = '';
+    const sc = Project.newScreen(I18n.t('pj.screenN', { n: project.screens.length + 1 }), st, typeSnap(st));
+    commit(p => { p.screens.push(sc); p.sel = sc.id; });
+    renderList();
+    openScreen(sc);
+    $('pjScreen').focus();
+    $('pjScreen').select();
+  });
+
+  $('pjDup').addEventListener('click', () => {
+    flush();
+    const cur = selected();
+    if (!cur) return;
+    const sc = Project.newScreen(I18n.t('pj.copyOf', { name: cur.name || '' }).slice(0, 80), snapshot(), cur.type);
+    commit(p => {
+      const i = p.screens.findIndex(x => x.id === cur.id);
+      p.screens.splice(i + 1, 0, sc);
+      p.sel = sc.id;
+    });
+    renderList();
+    $('pjScreen').focus();
+    $('pjScreen').select();
+  });
+
+  $('pjDel').addEventListener('click', () => {
+    const cur = selected();
+    if (!cur) return;
+    if (!confirm(I18n.t('pj.delQ', { name: cur.name || I18n.t('pj.screenN', { n: project.screens.indexOf(cur) + 1 }) }))) return;
+    clearTimeout(saveTimer);
+    let next = null;
+    commit(p => {
+      const i = p.screens.findIndex(x => x.id === cur.id);
+      p.screens.splice(i, 1);
+      next = p.screens[Math.min(i, p.screens.length - 1)] || null;
+      p.sel = next ? next.id : null;
+    });
+    renderList();
+    if (next) openScreen(next);
+  });
+
+  function move(d) {
+    flush();
+    commit(p => {
+      const i = p.screens.findIndex(x => x.id === p.sel);
+      const j = i + d;
+      if (i < 0 || j < 0 || j >= p.screens.length) return;
+      [p.screens[i], p.screens[j]] = [p.screens[j], p.screens[i]];
+    });
+    renderList();
+  }
+  $('pjUp').addEventListener('click', () => move(-1));
+  $('pjDown').addEventListener('click', () => move(1));
+
+  $('pjExport').addEventListener('click', () => {
+    flush();
+    const name = `${Project.slug(project.name) || 'project'}_LED_project_${Project.today()}.json`;
+    const blob = new Blob([Project.toFile(project, Project.loadCompany())], { type: 'application/json' });
+    window.saveFile(blob, name).then(r => {
+      if (r === 'saved') pjStatus(I18n.t('pj.exported', { name }));
+      else if (r === 'declined') pjStatus(I18n.t('st.declined'));
+      else pjStatus(I18n.t('st.saveFailed'), true);
+    });
+  });
+
+  document.querySelectorAll('[data-pj-import]').forEach(b => b.addEventListener('click', () => $('pjFile').click()));
+  $('pjFile').addEventListener('change', async e => {
+    const f = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!f) return;
+    let r = null;
+    try { r = Project.fromFile(await f.text()); } catch { r = null; }
+    if (!r) { pjStatus(I18n.t('pj.badFile'), true); return; }
+    if (project && !confirm(I18n.t('pj.replaceQ', { name: project.name || I18n.t('pj.untitled') }))) return;
+    clearTimeout(saveTimer);
+    project = r.project;
+    if (!Project.save(project)) { pjStatus(I18n.t('tp.storeFail'), true); return; }
+    let msg = I18n.t('pj.imported', { n: project.screens.length });
+    if (r.company && Project.companyEmpty(Project.loadCompany())) {
+      Project.saveCompany(r.company);
+      msg += ' ' + I18n.t('pj.importedCo');
+    }
+    renderList();
+    if (selected()) openScreen(selected());
+    pjStatus(msg);
+  });
+
+  $('pjClose').addEventListener('click', () => {
+    if (!confirm(I18n.t('pj.closeQ', { name: project.name || I18n.t('pj.untitled') }))) return;
+    clearTimeout(saveTimer);
+    Project.remove();
+    project = null;
+    renderList();
+    pjStatus(I18n.t('pj.closed'));
+  });
+
+  $('pjReport').addEventListener('click', () => {
+    if (project) flush();
+    else if (!startProject()) return;
+    location.href = 'report.html';
+  });
+
+  // another tab (the report page) changed the project
+  window.addEventListener('storage', e => {
+    if (e.key !== Project.KEY) return;
+    const p = Project.load();
+    const was = project && project.sel;
+    if (p && was && p.screens.some(x => x.id === was)) { p.sel = was; project = p; renderList(); return; }
+    // the selected screen is gone: never write this form into another screen
+    clearTimeout(saveTimer);
+    project = p;
+    renderList();
+    if (selected()) openScreen(selected());
+  });
+  window.addEventListener('pagehide', () => { if (saveTimer) flush(); });
 
   const cab = Cabinets.bind({ onChange: () => update() });
 
@@ -278,11 +541,30 @@
     cab.fill();
     $('preset').value = keep;
     status('');
+    pjStatus('');
+    renderList();
     update();
   });
   fillPresets();
   cab.fill();
   $('panel').value = DEFAULT_PANEL;
-  if (location.hash.length > 1) applyExternal(fromQuery(location.hash.slice(1)));
+  const DEFAULT_STATE = snapshot();
+  const hash = location.hash.length > 1 ? location.hash.slice(1) : '';
+  if (selected()) {
+    // reopen the selected screen; a link with other settings becomes a new screen
+    // instead of overwriting it
+    applyExternal(selected().state);
+    if (hash) {
+      const before = toQuery(readState());
+      applyExternal(fromQuery(hash));
+      const s = readState();
+      if (toQuery(s) !== before) {
+        const sc = Project.newScreen(s.screen || I18n.t('pj.linked'), snapshot(), typeSnap(s));
+        commit(p => { p.screens.push(sc); p.sel = sc.id; });
+        pjStatus(I18n.t('pj.linkAdded'));
+      }
+    }
+  } else if (hash) applyExternal(fromQuery(hash));
+  renderList();
   update();
 })();

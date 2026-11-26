@@ -27,6 +27,42 @@
   <main class="layout">
     <aside class="panel" id="controls">
 
+      <section id="project" class="project">
+        <h2 data-i18n="pj.title">Project</h2>
+        <div id="pjNone">
+          <p class="note pj-intro" data-i18n="pj.intro">Plan several screens for one event, then print them as one PDF report.</p>
+          <div class="row btns">
+            <button type="button" id="pjStart" class="ghost small" data-i18n="pj.start">Start a project</button>
+            <button type="button" class="ghost small" data-pj-import data-i18n="pj.import">Import project</button>
+          </div>
+        </div>
+        <div id="pjOn" hidden>
+          <label><span data-i18n="pj.name">Project name</span><input type="text" id="pjName" maxlength="120" autocomplete="off"></label>
+          <div class="pj-head">
+            <span id="pjCount" class="pj-count"></span>
+            <span class="pj-move">
+              <button type="button" id="pjUp" class="ghost small" aria-label="Move up" data-i18n-aria="pj.up" data-i18n-title="pj.up" title="Move up">↑</button>
+              <button type="button" id="pjDown" class="ghost small" aria-label="Move down" data-i18n-aria="pj.down" data-i18n-title="pj.down" title="Move down">↓</button>
+            </span>
+          </div>
+          <div class="pj-list" id="pjList" role="group" aria-label="Screens" data-i18n-aria="pj.screens"></div>
+          <div class="pj-tools">
+            <button type="button" id="pjAdd" class="ghost small" data-i18n="pj.add">Add screen</button>
+            <button type="button" id="pjDup" class="ghost small" data-i18n="pj.dup">Duplicate</button>
+            <button type="button" id="pjDel" class="ghost small" data-i18n="pj.del">Delete</button>
+          </div>
+          <label><span data-i18n="pj.screenName">Name of this screen</span><input type="text" id="pjScreen" maxlength="80" autocomplete="off"></label>
+          <div class="row btns pj-file">
+            <button type="button" id="pjExport" class="ghost small" data-i18n="pj.export">Export project</button>
+            <button type="button" class="ghost small" data-pj-import data-i18n="pj.import">Import project</button>
+            <button type="button" id="pjClose" class="ghost small" data-i18n="pj.close">Delete project</button>
+          </div>
+        </div>
+        <button type="button" id="pjReport" class="ghost wide pj-report" data-i18n="pj.report">PDF report</button>
+        <input type="file" id="pjFile" accept=".json,application/json" hidden>
+        <p class="status pj-msg" id="pjMsg" role="status"></p>
+      </section>
+
       <section>
         <h2 data-i18n="res.title">Resolution</h2>
         <div class="row">
@@ -164,6 +200,7 @@
 
   <script src="save.js"></script>
   <script src="cabinets.js"></script>
+  <script src="project.js"></script>
   <script src="pattern.js"></script>
   <script src="app.js"></script>
 </body>

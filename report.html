@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LED Screen Report</title>
+  <meta name="description" data-i18n-content="rp.desc" content="Print-ready A4 report of an LED screen project.">
+  <script src="i18n.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="report.css">
+</head>
+<body class="rp">
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="Home" data-i18n-aria="nav.home">
+      <h1>LED Screen Content</h1>
+      <span class="aurora" aria-hidden="true"><i></i><i></i><i></i></span>
+    </a>
+    <nav class="tabs" aria-label="Sections" data-i18n-aria="nav.sections">
+      <a href="abstract.html" data-i18n="nav.abstract">Backgrounds</a>
+      <a href="test-pattern.html" aria-current="page" data-i18n="nav.test">Test patterns</a>
+    </nav>
+    <button type="button" class="lang-toggle" data-lang-toggle data-i18n="lang.toggle" data-i18n-aria="lang.toggleAria" aria-label="Switch to Arabic">العربية</button>
+  </header>
+
+  <main class="layout rp-layout">
+    <aside class="panel" id="controls">
+
+      <section class="actions rp-actions">
+        <button type="button" id="print" class="primary" data-i18n="rp.print">Print / Save as PDF</button>
+        <a class="pill pill-ghost rp-back" href="test-pattern.html" data-i18n="rp.back">Back to the screens</a>
+        <p class="note" data-i18n="rp.printHint">In the print dialog choose “Save as PDF”, paper size A4.</p>
+        <p class="note rp-count" id="rpCount"></p>
+        <p class="status" id="rpMsg" role="status"></p>
+      </section>
+
+      <section>
+        <h2 data-i18n="rp.include">In the report</h2>
+        <label class="check"><input type="checkbox" id="inc_data" data-pj> <span data-i18n="rp.incData">Data map: sending-card ports</span></label>
+        <label class="check"><input type="checkbox" id="inc_power" data-pj> <span data-i18n="rp.incPower">Power map: circuits</span></label>
+        <label class="check"><input type="checkbox" id="inc_packing" data-pj> <span data-i18n="rp.incPacking">Packing list</span></label>
+        <label class="check"><input type="checkbox" id="inc_media" data-pj> <span data-i18n="rp.incMedia">Media server and content delivery</span></label>
+      </section>
+
+      <section>
+        <h2 data-i18n="pj.title">Project</h2>
+        <label><span data-i18n="pj.name">Project name</span><input type="text" id="rpName" maxlength="120" data-pj autocomplete="off"></label>
+        <label><span data-i18n="rp.client">Prepared for</span><input type="text" id="rpClient" maxlength="120" data-pj placeholder="Client or venue (optional)" data-i18n-ph="rp.clientPh" autocomplete="off"></label>
+        <label><span data-i18n="rp.date">Date</span><input type="date" id="rpDate" data-pj></label>
+      </section>
+
+      <section>
+        <h2 data-i18n="rp.company">Your company</h2>
+        <p class="note rp-sub" data-i18n="rp.companyNote">Saved in this browser and used on every report.</p>
+        <div class="logo-head" id="logoHead" hidden>
+          <img id="logoImg" alt="">
+          <button type="button" id="logoRemove" class="ghost small" data-i18n="ab.remove">Remove</button>
+        </div>
+        <label class="drop" id="logoDrop">
+          <span id="logoDropText">Choose a logo (SVG or PNG), or drop it here</span>
+          <input type="file" id="logoFile" accept="image/svg+xml,image/png,image/jpeg,image/webp,.svg">
+        </label>
+        <label><span data-i18n="rp.coName">Company name</span><input type="text" id="co_name" maxlength="200" autocomplete="organization"></label>
+        <label><span data-i18n="rp.coAddress">Address</span><input type="text" id="co_address" maxlength="200" autocomplete="street-address"></label>
+        <div class="row">
+          <label><span data-i18n="rp.coPhone">Phone</span><input type="text" id="co_phone" maxlength="200" dir="ltr" autocomplete="tel"></label>
+          <label><span data-i18n="rp.coEmail">Email</span><input type="text" id="co_email" maxlength="200" dir="ltr" autocomplete="email"></label>
+        </div>
+        <label><span data-i18n="rp.coFooter">Footer line</span><input type="text" id="co_footer" maxlength="200" placeholder="© 2026 Company. All rights reserved." data-i18n-ph="rp.coFooterPh"></label>
+      </section>
+
+      <section>
+        <h2 data-i18n="rp.power">Power</h2>
+        <div class="row">
+          <label><span data-i18n="rp.volts">Mains voltage (V)</span><input type="number" id="el_volts" min="1" step="1" data-pj></label>
+          <label><span data-i18n="rp.breaker">Breaker (A)</span><input type="number" id="el_breaker" min="1" step="1" data-pj></label>
+        </div>
+        <div class="row">
+          <label><span data-i18n="rp.usable">Usable load (%)</span><input type="number" id="el_usable" min="1" max="100" step="1" data-pj></label>
+          <label><span data-i18n="rp.avgPct">Average of max (%)</span><input type="number" id="el_avgPct" min="0" max="100" step="1" data-pj></label>
+        </div>
+        <div class="row">
+          <label><span data-i18n="rp.pf">Power factor</span><input type="number" id="el_pf" min="0.1" max="1" step="0.01" data-pj></label>
+          <label class="rp-reset"><span>&nbsp;</span><button type="button" id="elReset" class="ghost small" data-pj data-i18n="rp.reset">Defaults</button></label>
+        </div>
+        <p class="note" data-i18n="rp.powerNote">Max power per cabinet comes from each screen. Circuits are filled to the usable load of the breaker.</p>
+      </section>
+
+      <section>
+        <h2 data-i18n="rp.packing">Packing list</h2>
+        <label><span data-i18n="rp.spareIn">Spares (% of cabinets and cables)</span><input type="number" id="spare" min="0" max="100" step="1" data-pj></label>
+      </section>
+
+      <section>
+        <h2 data-i18n="rp.media">Media server and content delivery</h2>
+        <label><span data-i18n="rp.mServer">Media server</span><input type="text" id="m_server" maxlength="120" data-pj></label>
+        <div class="row">
+          <label><span data-i18n="rp.mCodec">Codec</span>
+            <select id="m_codec" data-pj>
+              <option value="DXV3">DXV3</option>
+              <option value="HAP">HAP</option>
+              <option value="HAPQ">HAP Q</option>
+              <option value="HAPA">HAP Alpha</option>
+              <option value="H264">H.264</option>
+              <option value="PRORES">ProRes 422 HQ</option>
+              <option value="PRORES4444">ProRes 4444</option>
+            </select>
+          </label>
+          <label id="m_qualityWrap"><span data-i18n="rp.mQuality">Quality</span>
+            <select id="m_quality" data-pj>
+              <option value="normal" data-i18n="rp.qNormal">Normal quality</option>
+              <option value="high" data-i18n="rp.qHigh">High quality</option>
+            </select>
+          </label>
+        </div>
+        <div class="row">
+          <label><span data-i18n="rp.mFps">Frame rate</span>
+            <select id="m_fps" data-pj>
+              <option value="25">25 fps</option>
+              <option value="29.97">29.97 fps</option>
+              <option value="30">30 fps</option>
+              <option value="50">50 fps</option>
+              <option value="59.94">59.94 fps</option>
+              <option value="60">60 fps</option>
+            </select>
+          </label>
+          <label class="check rp-alpha"><input type="checkbox" id="m_alpha" data-pj> <span data-i18n="rp.mAlpha">Alpha channel</span></label>
+        </div>
+        <label><span data-i18n="rp.mAudio">Audio</span>
+          <select id="m_audio" data-pj>
+            <option value="wav" data-i18n="rp.audio.wav">Linear PCM (.wav)</option>
+            <option value="aac" data-i18n="rp.audio.aac">AAC (in the video file)</option>
+            <option value="none" data-i18n="rp.audio.none">No audio</option>
+          </select>
+        </label>
+        <div class="row">
+          <label><span data-i18n="rp.mRate">Sample rate</span>
+            <select id="m_rate" data-pj>
+              <option value="44.1">44.1 kHz</option>
+              <option value="48">48 kHz</option>
+            </select>
+          </label>
+          <label><span data-i18n="rp.mDepth">Bit depth</span>
+            <select id="m_depth" data-pj>
+              <option value="16">16-bit</option>
+              <option value="24">24-bit</option>
+            </select>
+          </label>
+        </div>
+        <label><span data-i18n="rp.mNaming">File naming</span><input type="text" id="m_naming" maxlength="120" dir="ltr" data-pj spellcheck="false"></label>
+        <p class="note" data-i18n="rp.namingHint">Fields: {project} {screen} {n} {w} {h} {fps}. Names stay in English letters.</p>
+        <label><span data-i18n="rp.mNotes">Notes for the content team</span><textarea id="m_notes" rows="3" maxlength="2000" data-pj></textarea></label>
+        <button type="button" id="mReset" class="ghost small" data-pj data-i18n="rp.reset">Defaults</button>
+      </section>
+    </aside>
+
+    <section class="stage rp-stage">
+      <div class="doc" id="doc" aria-label="Report preview" data-i18n-aria="rp.preview"></div>
+    </section>
+  </main>
+
+  <script src="cabinets.js"></script>
+  <script src="project.js"></script>
+  <script src="report.js"></script>
+</body>
+</html>

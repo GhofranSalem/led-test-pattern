@@ -603,3 +603,49 @@ output { color: var(--color-bone-white); direction: ltr; unicode-bidi: isolate; 
 .howto li + li { margin-top: 4px; }
 .howto p { margin: 6px 0 0; color: var(--color-off-white); font-size: 13px; line-height: 20px; }
 .howto a { color: var(--color-bone-white); word-break: break-all; }
+
+/* ---------- project: several screens (test-pattern page) ---------- */
+.pj-intro { margin: 0 0 12px; }
+.pj-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: -4px 0 6px; }
+.pj-count { font-size: 12px; line-height: 18px; color: var(--color-mute-gray); }
+.pj-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 232px;
+  overflow-y: auto;
+  margin-bottom: 8px;
+  border: 1px solid var(--color-smoke);
+  border-radius: var(--radius-sm);
+}
+.pj-item {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-bottom: 1px solid var(--color-smoke);
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-off-white);
+  text-align: start;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 400;
+}
+.pj-item:last-child { border-bottom: 0; }
+.pj-item:hover { background: var(--color-recess-black); }
+.pj-item:focus-visible { outline-offset: -2px; }
+.pj-item[aria-pressed="true"] { background: var(--color-bone-white); color: var(--color-true-black); font-weight: 500; }
+.pj-n, .pj-res { font-family: var(--font-mono); font-size: 12px; color: var(--color-mute-gray); }
+.pj-res { direction: ltr; unicode-bidi: isolate; }
+.pj-item[aria-pressed="true"] .pj-n, .pj-item[aria-pressed="true"] .pj-res { color: inherit; opacity: .7; }
+.pj-nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pj-empty { margin: 0; padding: 10px; }
+.pj-tools { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.pj-move { display: flex; gap: 4px; }
+.pj-move button { min-width: 30px; padding: 2px 8px; }
+.pj-file { margin-top: 4px; }
+.pj-report { margin: 12px 0 0; }
+.pj-msg:empty { display: none; }
